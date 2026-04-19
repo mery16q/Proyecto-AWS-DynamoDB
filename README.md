@@ -1,5 +1,21 @@
 # Proyecto-AWS-DynamoDB
 
+Sistema de gestión de catálogo bibliográfico en la nube con DynamoDB.
+
+## Instalación
+1. Clonar el repositorio.
+2. Crear entorno virtual: `python -m venv venv`
+3. Activar: `.\venv\Scripts\activate` (o `source venv/bin/activate`)
+4. Instalar dependencias: `pip install -r requirements.txt`
+
+## Uso
+- Para crear la infraestructura: `python src/infraestructura.py`
+- Para consultar datos: `python src/consultas.py`
+
+## Documentación Técnica
+- [Contrato de Datos (Esquema de DynamoDB)](DATA_CONTRACT.md)
+
+
 # 📄 Contrato de Datos: Catálogo de Libros (DynamoDB)
 
 Este documento define la estructura estricta que deben seguir los datos al ser insertados en la tabla `CatalogoLibros`. Cualquier desviación impedirá que las consultas y los Índices Secundarios (GSI) funcionen correctamente.
