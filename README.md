@@ -10,6 +10,7 @@ Sistema de gestión de catálogo bibliográfico en la nube con DynamoDB.
 
 ## Uso
 - Para crear la infraestructura: `python src/infraestructura.py`
+- Para poblar con 10000 datos: `python src/poblar_db.py`
 - Para consultar datos: `python src/consultas.py`
 
 ## Documentación Técnica
