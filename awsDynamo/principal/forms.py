@@ -2,7 +2,7 @@
 from django import forms
    
 class LibroBusquedaIsbnForm(forms.Form):
-    isbn = forms.IntegerField(label="ISBN", widget=forms.NumberInput, required=True)
+    isbn = forms.CharField(label="ISBN", widget=forms.TextInput, required=True)
     
 class LibroBusquedaAutorForm(forms.Form):
     autor = forms.CharField(label="Autor", widget=forms.TextInput, required=True)
