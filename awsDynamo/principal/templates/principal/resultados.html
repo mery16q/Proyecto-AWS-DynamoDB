@@ -61,19 +61,13 @@
         </div>
 
         <!-- Results Counter -->
-        {% if resultados %}
-            <div class="alert alert-info mb-4">
-                <i class="bi bi-info-circle"></i> Se encontraron <strong>{{ resultados|length }}</strong> resultado(s)
+        {% if resultados or mensaje %}
+            <div class="alert alert-info">
+                Encontrados <strong>{{ resultados|length }}</strong> resultados 
+                en <strong>{{ tiempo }} ms</strong>.
             </div>
         {% endif %}
-
-        <!-- Messages -->
-        {% if mensaje %}
-            <div class="alert alert-warning mb-4">
-                <i class="bi bi-exclamation-triangle"></i> {{ mensaje }}
-            </div>
-        {% endif %}
-
+        
         <!-- Results -->
         <div class="results-container">
             {% if resultados %}

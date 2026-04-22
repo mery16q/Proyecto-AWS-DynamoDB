@@ -17,14 +17,14 @@ dynamodb = boto3.resource(
 table = dynamodb.Table('CatalogoLibros')
 
 def medir_rendimiento(func):
-    """Decorador para medir el tiempo de ejecución de las consultas."""
+    """Decorador para devolver el resultado y el tiempo de ejecución."""
     def wrapper(*args, **kwargs):
         inicio = time.perf_counter()
         resultado = func(*args, **kwargs)
         fin = time.perf_counter()
-        latencia = (fin - inicio) * 1000  # Convertir a milisegundos
+        latencia = (fin - inicio) * 1000  # En milisegundos
         print(f"⏱️ Consulta [{func.__name__}]: {latencia:.2f} ms")
-        return resultado
+        return resultado, round(latencia, 2)
     return wrapper
 
 @medir_rendimiento
