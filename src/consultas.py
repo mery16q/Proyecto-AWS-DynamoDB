@@ -60,6 +60,19 @@ def scan_por_tipo_item(tipo_item):
     )
     return respuesta.get('Items')
 
+
+def obtener_tamano_tabla():
+    """Devuelve el número total de ítems en la tabla DynamoDB."""
+    try:
+        table.load()
+        if table.item_count is not None:
+            return int(table.item_count)
+    except Exception:
+        pass
+
+    respuesta = table.scan(Select='COUNT')
+    return respuesta.get('Count', 0)
+
 # --- EJEMPLO DE PRUEBA ---
 if __name__ == "__main__":
     print("--- INICIANDO PRUEBAS DE RENDIMIENTO ---")

@@ -7,7 +7,7 @@ import os
 # Agregar la ruta src al path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from consultas import buscar_libro_por_isbn, buscar_por_autor, scan_por_tipo_item
+from consultas import buscar_libro_por_isbn, buscar_por_autor, scan_por_tipo_item, obtener_tamano_tabla
 from .forms import LibroBusquedaIsbnForm, LibroBusquedaAutorForm, LibroBusquedaTipoForm
 
 
@@ -41,11 +41,13 @@ def buscar_isbn(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
+    total_tabla = obtener_tamano_tabla()
     contexto = {
         'form': form,
         'resultados': resultados,
         'mensaje': mensaje,
-        'tiempo': tiempo,  
+        'tiempo': tiempo,
+        'total_tabla': total_tabla,
         'tipo_busqueda': 'ISBN',
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -68,11 +70,13 @@ def buscar_autor(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
+    total_tabla = obtener_tamano_tabla()
     contexto = {
         'form': form,
         'resultados': resultados,
         'mensaje': mensaje,
         'tiempo': tiempo,
+        'total_tabla': total_tabla,
         'tipo_busqueda': 'Autor',
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -95,11 +99,13 @@ def buscar_tipo(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
+    total_tabla = obtener_tamano_tabla()
     contexto = {
         'form': form,
         'resultados': resultados,
         'mensaje': mensaje,
         'tiempo': tiempo,
+        'total_tabla': total_tabla,
         'tipo_busqueda': 'Tipo',
     }
     return render(request, 'principal/resultados.html', contexto)

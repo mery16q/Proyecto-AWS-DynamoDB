@@ -16,9 +16,8 @@ dynamodb = boto3.resource(
 )
 table = dynamodb.Table('CatalogoLibros')
 
-def generar_datos_libro():
+def generar_datos_libro(isbn):
     """Genera un diccionario con datos realistas siguiendo Single-Table Design."""
-    isbn = fake.isbn13()
     tipo_formato = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
     
     # Atributos comunes
@@ -44,11 +43,13 @@ def generar_datos_libro():
 def poblar_tabla(total_registros=10000):
     print(f"Iniciando carga masiva de {total_registros} registros...")
     
+    fake.unique.clear()
     try:
         # El batch_writer gestiona automáticamente el buffering y reintentos
         with table.batch_writer() as batch:
             for i in range(total_registros):
-                batch.put_item(Item=generar_datos_libro())
+                isbn = fake.unique.isbn13()
+                batch.put_item(Item=generar_datos_libro(isbn))
                 
                 if (i + 1) % 1000 == 0:
                     print(f"Progreso: {i + 1} registros insertados.")
