@@ -1,0 +1,43 @@
+{% extends 'principal/base.html' %}
+
+{% block title %}Inicio - Catálogo de Libros{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <h1>Bienvenido al Catálogo de Libros</h1>
+    <p>Busca libros en nuestra base de datos usando AWS DynamoDB</p>
+</div>
+        <!-- Information Section -->
+        <div class="row mt-5">
+            <div class="col-md-4 mb-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-search" style="font-size: 2rem; color: #667eea;"></i>
+                        <h5 class="card-title mt-3">Búsqueda Rápida</h5>
+                        <p class="card-text">Encuentra libros instantáneamente con ISBN</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-person" style="font-size: 2rem; color: #667eea;"></i>
+                        <h5 class="card-title mt-3">Por Autor</h5>
+                        <p class="card-text">Busca todos los libros de tu autor favorito</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <i class="bi bi-tag" style="font-size: 2rem; color: #667eea;"></i>
+                        <h5 class="card-title mt-3">Por Tipo</h5>
+                        <p class="card-text">Filtra por Físico, Ebook o Audiolibro</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

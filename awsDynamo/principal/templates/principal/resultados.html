@@ -1,0 +1,175 @@
+{% extends 'principal/base.html' %}
+
+{% block title %}Resultados - Catálogo de Libros{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <!-- Page Title -->
+        <h2 class="mb-4">
+            <i class="bi bi-search"></i> Resultados de Búsqueda por {{ tipo_busqueda }}
+        </h2>
+
+        <!-- Search Form Section -->
+        <div class="search-section mb-5">
+            {% if tipo_busqueda == 'ISBN' %}
+                <h5 class="mb-3">Nueva Búsqueda por ISBN</h5>
+                <form method="post" action="{% url 'principal:buscar_isbn' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.isbn }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Autor' %}
+                <h5 class="mb-3">Nueva Búsqueda por Autor</h5>
+                <form method="post" action="{% url 'principal:buscar_autor' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.autor }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Tipo' %}
+                <h5 class="mb-3">Nueva Búsqueda por Tipo</h5>
+                <form method="post" action="{% url 'principal:buscar_tipo' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.tipo_item }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Results Counter -->
+        {% if resultados %}
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle"></i> Se encontraron <strong>{{ resultados|length }}</strong> resultado(s)
+            </div>
+        {% endif %}
+
+        <!-- Messages -->
+        {% if mensaje %}
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle"></i> {{ mensaje }}
+            </div>
+        {% endif %}
+
+        <!-- Results -->
+        <div class="results-container">
+            {% if resultados %}
+                {% for resultado in resultados %}
+                    <div class="result-card">
+                        <!-- Title and PK/SK -->
+                        <div class="mb-3">
+                            {% if resultado.Titulo %}
+                                <h5>{{ resultado.Titulo }}</h5>
+                            {% elif resultado.PK %}
+                                <h5>{{ resultado.PK }}</h5>
+                            {% else %}
+                                <h5>Libro sin título</h5>
+                            {% endif %}
+                        </div>
+
+                        <!-- Result Information Grid -->
+                        <div class="result-info">
+                            {% for key, value in resultado.items %}
+                                {% if key not in 'PK,SK' %}
+                                    <div class="result-info-item">
+                                        <strong>{{ key }}:</strong>
+                                        {% if value is iterable and value is not string %}
+                                            {% for item in value %}
+                                                <span class="badge bg-secondary">{{ item }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span>
+                                                {% if value == True %}
+                                                    <span class="badge bg-success">Sí</span>
+                                                {% elif value == False %}
+                                                    <span class="badge bg-danger">No</span>
+                                                {% else %}
+                                                    {{ value }}
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- PK and SK (Technical Info) -->
+                        <div class="mt-3 pt-3 border-top">
+                            <small class="text-muted">
+                                <strong>PK:</strong> {{ resultado.PK }}<br>
+                                <strong>SK:</strong> {{ resultado.SK }}
+                            </small>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% if not mensaje %}
+                    <div class="resultado-vacio">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <h5 class="mt-3">No se encontraron resultados</h5>
+                        <p>Intenta con otros criterios de búsqueda</p>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-5">
+            <a href="{% url 'principal:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .result-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .result-info-item {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 5px;
+        word-break: break-word;
+    }
+
+    .result-info-item strong {
+        color: #667eea;
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .badge {
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}

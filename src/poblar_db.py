@@ -1,4 +1,3 @@
-#pip install boto3 faker
 import os
 import random
 import boto3
