@@ -4,6 +4,7 @@ import uuid
 import boto3
 from faker import Faker
 from dotenv import load_dotenv
+from consultas import obtener_tamano_tabla
 
 load_dotenv()
 
@@ -16,74 +17,99 @@ dynamodb = boto3.resource(
 )
 table = dynamodb.Table('CatalogoLibros')
 
-def poblar_todo():
-    print("--- INICIANDO CARGA TOTAL (Libros, Usuarios, Préstamos, Autores, Valoraciones) ---")
+def generar_datos_libro(isbn):
+    """Genera un diccionario con datos realistas siguiendo Single-Table Design."""
+    tipo_formato = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
     
-    # Datos de control
-    lista_libros = []
-    lista_usuarios = [f"USER{i}" for i in range(1, 11)]
-    lista_autores = [fake.name() for _ in range(5)]
+    # Atributos comunes
+    item = {
+        'PK': f'LIBRO#{isbn}',
+        'SK': 'METADATOS',
+        'TipoItem': tipo_formato,
+        'Titulo': fake.sentence(nb_words=4).replace('.', ''),
+        'Autor': fake.name()
+    }
 
-    with table.batch_writer() as batch:
-        # 1. Crear Autores (Entidad Independiente)
-        for autor in lista_autores:
-            slug = autor.replace(" ", "_").upper()
-            batch.put_item(Item={
-                'PK': f'AUTHOR#{slug}',
-                'SK': 'METADATOS',
-                'Nombre': autor,
-                'Biografia': fake.text(max_nb_chars=100)
-            })
-        print("✅ Autores creados.")
+    # Atributos específicos según formato (Esquema Flexible)
+    if tipo_formato == 'EBOOK':
+        item['Formato'] = random.choice(['PDF', 'EPUB'])
+    elif tipo_formato == 'AUDIO':
+        item['DuracionMinutos'] = random.randint(60, 900)
+        item['Narrador'] = fake.name()
+    else:  # FISICO
+        item['Paginas'] = random.randint(50, 1000)
 
-        # 2. Crear Usuarios
-        for uid in lista_usuarios:
-            batch.put_item(Item={
-                'PK': f'USER#{uid}',
-                'SK': 'PROFILE',
-                'Nombre': fake.name(),
-                'Email': fake.email()
-            })
-        print("✅ Usuarios creados.")
+    return item
 
-        # 3. Crear Libros
-        for _ in range(30):
-            isbn = fake.unique.isbn13()
-            autor_aleatorio = random.choice(lista_autores)
-            lista_libros.append(isbn)
+def vaciar_tabla():
+    """Vacía completamente la tabla DynamoDB eliminando todos los ítems."""
+    print("Vaciando la tabla existente...")
+    try:
+        # Scan para obtener todas las claves primarias
+        response = table.scan(ProjectionExpression='PK, SK')
+        items_to_delete = response.get('Items', [])
+        
+        # Manejar paginación si hay muchos ítems
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                ProjectionExpression='PK, SK',
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            items_to_delete.extend(response.get('Items', []))
+        
+        if not items_to_delete:
+            print("La tabla ya está vacía.")
+            return
+        
+        # Eliminar en batch
+        with table.batch_writer() as batch:
+            for item in items_to_delete:
+                batch.delete_item(Key={'PK': item['PK'], 'SK': item['SK']})
+        
+        print(f"Eliminados {len(items_to_delete)} ítems existentes.")
+        
+    except Exception as e:
+        print(f"Error al vaciar la tabla: {e}")
+        raise
+
+def poblar_tabla(objetivo=10000):
+    print(f"--- INICIANDO CARGA DE DATOS PRECISA ---")
+    vaciar_tabla()
+    
+    actuales = obtener_tamano_tabla()
+
+    intentos_totales = 0
+    max_intentos_globales = objetivo * 2 # Evita bucles infinitos si hay errores graves
+
+    # 2. Bucle de control basado en el estado real de la base de datos
+    while actuales < objetivo and intentos_totales < max_intentos_globales:
+        faltantes = objetivo - actuales
+        print(f"Progreso: {actuales}/{objetivo}. Insertando bloque de {faltantes} faltantes...")
+        
+        try:
+            # El batch_writer es eficiente pero no garantiza que todos los items entren si hay duplicados
+            with table.batch_writer() as batch:
+                for _ in range(faltantes):
+                    # Usamos unique.isbn13 para minimizar colisiones en la misma sesión
+                    isbn = fake.unique.isbn13() 
+                    item = generar_datos_libro(isbn)
+                    batch.put_item(Item=item)
+                    intentos_totales += 1
             
-            batch.put_item(Item={
-                'PK': f'LIBRO#{isbn}',
-                'SK': 'METADATOS',
-                'Titulo': fake.sentence(nb_words=3),
-                'Autor': autor_aleatorio
-            })
+            # Limpiamos la memoria de 'unique' tras cada bloque para evitar saturación
+            fake.unique.clear()
+            
+        except Exception as e:
+            print(f"Error durante la inserción del bloque: {e}")
+        
+        # 3. Verificación CRÍTICA: Consultamos el cardinal real de la tabla
+        actuales = obtener_tamano_tabla() 
+        print(f"Conteo real tras validación de base de datos: {actuales}")
 
-            # 4. Crear Valoraciones (Vinculadas al Libro - Adjacency List)
-            # Creamos 1-3 valoraciones por cada libro
-            for _ in range(random.randint(1, 3)):
-                user_rater = random.choice(lista_usuarios)
-                batch.put_item(Item={
-                    'PK': f'LIBRO#{isbn}',
-                    'SK': f'RATING#{user_rater}', # SK identifica al usuario que vota
-                    'Puntuacion': random.randint(1, 5),
-                    'Comentario': fake.sentence()
-                })
-        print("✅ Libros y Valoraciones creados.")
-
-        # 5. Crear Préstamos (Vinculados al Usuario)
-        for _ in range(20):
-            uid = random.choice(lista_usuarios)
-            isbn = random.choice(lista_libros)
-            batch.put_item(Item={
-                'PK': f'USER#{uid}',
-                'SK': f'LOAN#{uuid.uuid4().hex[:6]}',
-                'ISBN_Libro': f'LIBRO#{isbn}',
-                'Estado': 'ACTIVO'
-            })
-        print("✅ Préstamos creados.")
-
-    print("--- PROCESO FINALIZADO CON ÉXITO ---")
+    if actuales == objetivo:
+        print(f"¡Éxito! La tabla tiene exactamente {actuales} registros únicos.")
+    else:
+        print(f"Finalizado. Registros finales: {actuales}. Revisa posibles colisiones externas.")
 
 if __name__ == "__main__":
     poblar_todo()

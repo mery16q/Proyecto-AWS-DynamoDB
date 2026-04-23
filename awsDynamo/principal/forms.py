@@ -14,3 +14,13 @@ class LibroBusquedaTipoForm(forms.Form):
         ('AUDIO', 'Audiolibro')
     ]
     tipo_item = forms.ChoiceField(label="Tipo de Ítem", choices=TIPO_CHOICES, required=True)
+
+class PoblarBaseDatosForm(forms.Form):
+    num_elementos = forms.IntegerField(
+        label="Número de elementos",
+        min_value=1,
+        max_value=100000,
+        widget=forms.NumberInput,
+        required=True,
+        help_text="Ingresa el número de libros a crear (máximo 100,000)"
+    )
