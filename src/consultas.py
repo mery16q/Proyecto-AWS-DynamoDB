@@ -78,10 +78,10 @@ if __name__ == "__main__":
     print("--- INICIANDO PRUEBAS DE RENDIMIENTO ---")
     
     # 1. Prueba de GetItem (Reemplaza con un ISBN real de tu tabla)
-    # libro = buscar_libro_por_isbn('9781234567890')
+    libro = buscar_libro_por_isbn('9781234567890')
     
     # 2. Prueba de Scan por Autor
-    # libros_autor = buscar_por_autor('Nombre de Autor Inventado')
+    libros_autor = buscar_por_autor('Nombre de Autor Inventado')
     
     # 3. Prueba de Scan por Tipo de Ítem
-    # resultados = scan_por_tipo_item('FISICO')
+    resultados = scan_por_tipo_item('FISICO')

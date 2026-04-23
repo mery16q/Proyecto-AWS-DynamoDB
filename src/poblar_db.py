@@ -1,12 +1,12 @@
 import os
 import random
+import uuid
 import boto3
 from faker import Faker
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Inicializamos Faker y el cliente de DynamoDB
 fake = Faker()
 dynamodb = boto3.resource(
     'dynamodb',
@@ -16,48 +16,74 @@ dynamodb = boto3.resource(
 )
 table = dynamodb.Table('CatalogoLibros')
 
-def generar_datos_libro(isbn):
-    """Genera un diccionario con datos realistas siguiendo Single-Table Design."""
-    tipo_formato = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
+def poblar_todo():
+    print("--- INICIANDO CARGA TOTAL (Libros, Usuarios, Préstamos, Autores, Valoraciones) ---")
     
-    # Atributos comunes
-    item = {
-        'PK': f'LIBRO#{isbn}',
-        'SK': 'METADATOS',
-        'TipoItem': tipo_formato,
-        'Titulo': fake.sentence(nb_words=4).replace('.', ''),
-        'Autor': fake.name()
-    }
+    # Datos de control
+    lista_libros = []
+    lista_usuarios = [f"USER{i}" for i in range(1, 11)]
+    lista_autores = [fake.name() for _ in range(5)]
 
-    # Atributos específicos según formato (Esquema Flexible)
-    if tipo_formato == 'EBOOK':
-        item['Formato'] = random.choice(['PDF', 'EPUB'])
-    elif tipo_formato == 'AUDIO':
-        item['DuracionMinutos'] = random.randint(60, 900)
-        item['Narrador'] = fake.name()
-    else:  # FISICO
-        item['Paginas'] = random.randint(50, 1000)
+    with table.batch_writer() as batch:
+        # 1. Crear Autores (Entidad Independiente)
+        for autor in lista_autores:
+            slug = autor.replace(" ", "_").upper()
+            batch.put_item(Item={
+                'PK': f'AUTHOR#{slug}',
+                'SK': 'METADATOS',
+                'Nombre': autor,
+                'Biografia': fake.text(max_nb_chars=100)
+            })
+        print("✅ Autores creados.")
 
-    return item
+        # 2. Crear Usuarios
+        for uid in lista_usuarios:
+            batch.put_item(Item={
+                'PK': f'USER#{uid}',
+                'SK': 'PROFILE',
+                'Nombre': fake.name(),
+                'Email': fake.email()
+            })
+        print("✅ Usuarios creados.")
 
-def poblar_tabla(total_registros=10000):
-    print(f"Iniciando carga masiva de {total_registros} registros...")
-    
-    fake.unique.clear()
-    try:
-        # El batch_writer gestiona automáticamente el buffering y reintentos
-        with table.batch_writer() as batch:
-            for i in range(total_registros):
-                isbn = fake.unique.isbn13()
-                batch.put_item(Item=generar_datos_libro(isbn))
-                
-                if (i + 1) % 1000 == 0:
-                    print(f"Progreso: {i + 1} registros insertados.")
-                    
-        print("¡Éxito! Base de datos poblada correctamente.")
-        
-    except Exception as e:
-        print(f"Error durante la carga: {e}")
+        # 3. Crear Libros
+        for _ in range(30):
+            isbn = fake.unique.isbn13()
+            autor_aleatorio = random.choice(lista_autores)
+            lista_libros.append(isbn)
+            
+            batch.put_item(Item={
+                'PK': f'LIBRO#{isbn}',
+                'SK': 'METADATOS',
+                'Titulo': fake.sentence(nb_words=3),
+                'Autor': autor_aleatorio
+            })
+
+            # 4. Crear Valoraciones (Vinculadas al Libro - Adjacency List)
+            # Creamos 1-3 valoraciones por cada libro
+            for _ in range(random.randint(1, 3)):
+                user_rater = random.choice(lista_usuarios)
+                batch.put_item(Item={
+                    'PK': f'LIBRO#{isbn}',
+                    'SK': f'RATING#{user_rater}', # SK identifica al usuario que vota
+                    'Puntuacion': random.randint(1, 5),
+                    'Comentario': fake.sentence()
+                })
+        print("✅ Libros y Valoraciones creados.")
+
+        # 5. Crear Préstamos (Vinculados al Usuario)
+        for _ in range(20):
+            uid = random.choice(lista_usuarios)
+            isbn = random.choice(lista_libros)
+            batch.put_item(Item={
+                'PK': f'USER#{uid}',
+                'SK': f'LOAN#{uuid.uuid4().hex[:6]}',
+                'ISBN_Libro': f'LIBRO#{isbn}',
+                'Estado': 'ACTIVO'
+            })
+        print("✅ Préstamos creados.")
+
+    print("--- PROCESO FINALIZADO CON ÉXITO ---")
 
 if __name__ == "__main__":
-    poblar_tabla(10000)
+    poblar_todo()
