@@ -5,8 +5,7 @@ import boto3
 from faker import Faker
 from dotenv import load_dotenv
 
-# Nota: Asegúrate de que tu archivo 'consultas.py' tenga la función 'obtener_tamano_tabla'
-# O sustitúyela por una consulta simple con table.item_count
+# Nota: Asegúrate de tener tu archivo 'consultas.py' con la función 'obtener_tamano_tabla'
 from consultas import obtener_tamano_tabla 
 
 load_dotenv()
@@ -39,20 +38,23 @@ def vaciar_tabla():
         print("La tabla ya estaba vacía.")
 
 def generar_datos_libro(isbn):
-    """Genera datos de un libro (Flexible Schema)."""
+    """Genera datos de un libro con su EntityType."""
     tipo_formato = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
     item = {
         'PK': f'LIBRO#{isbn}',
         'SK': 'METADATOS',
+        'EntityType': 'LIBRO',  # <-- Mejora: Identificador de tipo
         'TipoItem': tipo_formato,
         'Titulo': fake.sentence(nb_words=3).replace('.', ''),
         'Autor': fake.name()
     }
-    if tipo_formato == 'EBOOK': item['Formato'] = random.choice(['PDF', 'EPUB'])
+    if tipo_formato == 'EBOOK': 
+        item['Formato'] = random.choice(['PDF', 'EPUB'])
     elif tipo_formato == 'AUDIO': 
         item['DuracionMinutos'] = random.randint(60, 900)
         item['Narrador'] = fake.name()
-    else: item['Paginas'] = random.randint(50, 1000)
+    else: 
+        item['Paginas'] = random.randint(50, 1000)
     return item
 
 def poblar_todo():
@@ -70,6 +72,7 @@ def poblar_todo():
             batch.put_item(Item={
                 'PK': f'AUTHOR#{nombre.replace(" ", "_").upper()}',
                 'SK': 'METADATOS',
+                'EntityType': 'AUTOR', # <-- Mejora
                 'Nombre': nombre,
                 'Biografia': "Escritor destacado del catálogo."
             })
@@ -80,6 +83,7 @@ def poblar_todo():
             batch.put_item(Item={
                 'PK': f'USER#{uid}',
                 'SK': 'PROFILE',
+                'EntityType': 'USUARIO', # <-- Mejora
                 'Nombre': fake.name(),
                 'Email': fake.email()
             })
@@ -89,7 +93,8 @@ def poblar_todo():
         for _ in range(num_libros):
             isbn = fake.unique.isbn13()
             lista_isbns.append(isbn)
-            # Libro
+            
+            # Insertar Libro
             batch.put_item(Item=generar_datos_libro(isbn))
             
             # Valoraciones (1 a 3 por libro)
@@ -97,15 +102,17 @@ def poblar_todo():
                 batch.put_item(Item={
                     'PK': f'LIBRO#{isbn}',
                     'SK': f'RATING#{random.choice(lista_uids)}',
+                    'EntityType': 'VALORACION', # <-- Mejora
                     'Puntuacion': random.randint(1, 5),
                     'Comentario': fake.sentence()
                 })
                 
         # 4. Crear Préstamos
-        for _ in range(30): # 30 préstamos aleatorios
+        for _ in range(30): 
             batch.put_item(Item={
                 'PK': f'USER#{random.choice(lista_uids)}',
                 'SK': f'LOAN#{uuid.uuid4().hex[:6]}',
+                'EntityType': 'PRESTAMO', # <-- Mejora
                 'ISBN_Libro': f'LIBRO#{random.choice(lista_isbns)}',
                 'Estado': 'ACTIVO'
             })
