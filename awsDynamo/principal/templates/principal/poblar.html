@@ -12,26 +12,14 @@
 
         <!-- Form Section -->
         <div class="search-section mb-5">
-            <h5 class="mb-3">Crear libros aleatorios</h5>
+            <h5 class="mb-3">Crear 100 libros aleatorios</h5>
             <form method="post">
                 {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-8">
-                        {{ form.num_elementos }}
-                        {% if form.num_elementos.errors %}
-                            <div class="alert alert-danger mt-2">
-                                {{ form.num_elementos.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-plus-circle"></i> Poblar
-                        </button>
-                    </div>
-                </div>
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-plus-circle"></i> Poblar Base de Datos
+                </button>
                 <small class="text-muted d-block mt-2">
-                    Ingresa el número de libros a crear (máximo 100,000)
+                    Se crearán 100 libros aleatorios en la base de datos DynamoDB
                 </small>
             </form>
         </div>

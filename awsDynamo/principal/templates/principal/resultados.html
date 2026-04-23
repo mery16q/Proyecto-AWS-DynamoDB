@@ -42,6 +42,81 @@
                         </div>
                     </div>
                 </form>
+            {% elif tipo_busqueda == 'Título' %}
+                <h5 class="mb-3">Nueva Búsqueda por Título</h5>
+                <form method="post" action="{% url 'principal:buscar_titulo' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.titulo }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Usuario por ID' %}
+                <h5 class="mb-3">Nueva Búsqueda de Usuario por ID</h5>
+                <form method="post" action="{% url 'principal:buscar_usuario_id' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.user_id }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Usuario por Email' %}
+                <h5 class="mb-3">Nueva Búsqueda de Usuario por Email</h5>
+                <form method="post" action="{% url 'principal:buscar_usuario_email' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Usuario por Nombre' %}
+                <h5 class="mb-3">Nueva Búsqueda de Usuario por Nombre</h5>
+                <form method="post" action="{% url 'principal:buscar_usuario_nombre' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.nombre }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Valoraciones por Usuario' %}
+                <h5 class="mb-3">Nueva Consulta de Valoraciones por Usuario</h5>
+                <form method="post" action="{% url 'principal:consultar_valoraciones_usuario' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.user_id }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
             {% elif tipo_busqueda == 'Tipo' %}
                 <h5 class="mb-3">Nueva Búsqueda por Tipo</h5>
                 <form method="post" action="{% url 'principal:buscar_tipo' %}">
@@ -110,8 +185,11 @@
                             {% endfor %}
                         </div>
 
-                        <!-- PK and SK (Technical Info) -->
-                        <div class="mt-3 pt-3 border-top">
+                        <!-- Editar datos -->
+                        <div class="mt-3 d-flex justify-content-between align-items-center">
+                            <a href="{% url 'principal:editar_item' %}?pk={{ resultado.PK|urlencode }}&sk={{ resultado.SK|urlencode }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil"></i> Editar datos
+                            </a>
                             <small class="text-muted">
                                 <strong>PK:</strong> {{ resultado.PK }}<br>
                                 <strong>SK:</strong> {{ resultado.SK }}

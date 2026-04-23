@@ -119,19 +119,30 @@
                             <i class="bi bi-house"></i> Inicio
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'buscar_isbn' %}active{% endif %}" href="{% url 'principal:buscar_isbn' %}">
-                            <i class="bi bi-search"></i> Buscar por ISBN
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownLibros" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-book"></i> Libros
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_isbn' %}active{% endif %}" href="{% url 'principal:buscar_isbn' %}">Por ISBN</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_autor' %}active{% endif %}" href="{% url 'principal:buscar_autor' %}">Por Autor</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_titulo' %}active{% endif %}" href="{% url 'principal:buscar_titulo' %}">Por Título</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_tipo' %}active{% endif %}" href="{% url 'principal:buscar_tipo' %}">Por Tipo</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUsuarios" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> Usuarios
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_usuario_id' %}active{% endif %}" href="{% url 'principal:buscar_usuario_id' %}">Por ID</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_usuario_email' %}active{% endif %}" href="{% url 'principal:buscar_usuario_email' %}">Por Email</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_usuario_nombre' %}active{% endif %}" href="{% url 'principal:buscar_usuario_nombre' %}">Por Nombre</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'buscar_autor' %}active{% endif %}" href="{% url 'principal:buscar_autor' %}">
-                            <i class="bi bi-person"></i> Buscar por Autor
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'buscar_tipo' %}active{% endif %}" href="{% url 'principal:buscar_tipo' %}">
-                            <i class="bi bi-tag"></i> Buscar por Tipo
+                        <a class="nav-link {% if request.resolver_match.url_name == 'consultar_valoraciones_usuario' %}active{% endif %}" href="{% url 'principal:consultar_valoraciones_usuario' %}">
+                            <i class="bi bi-star"></i> Valoraciones
                         </a>
                     </li>
                     <li class="nav-item">

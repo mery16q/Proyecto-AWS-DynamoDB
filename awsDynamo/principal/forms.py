@@ -7,6 +7,21 @@ class LibroBusquedaIsbnForm(forms.Form):
 class LibroBusquedaAutorForm(forms.Form):
     autor = forms.CharField(label="Autor", widget=forms.TextInput, required=True)
 
+class LibroBusquedaTituloForm(forms.Form):
+    titulo = forms.CharField(label="Título", widget=forms.TextInput, required=True)
+
+class UsuarioBusquedaIdForm(forms.Form):
+    user_id = forms.CharField(label="ID de Usuario", widget=forms.TextInput, required=True)
+
+class UsuarioBusquedaEmailForm(forms.Form):
+    email = forms.EmailField(label="Email", widget=forms.EmailInput, required=True)
+
+class UsuarioBusquedaNombreForm(forms.Form):
+    nombre = forms.CharField(label="Nombre", widget=forms.TextInput, required=True)
+
+class ValoracionesUsuarioForm(forms.Form):
+    user_id = forms.CharField(label="ID de Usuario", widget=forms.TextInput, required=True)
+
 class LibroBusquedaTipoForm(forms.Form):
     TIPO_CHOICES = [
         ('FISICO', 'Físico'),
@@ -14,13 +29,3 @@ class LibroBusquedaTipoForm(forms.Form):
         ('AUDIO', 'Audiolibro')
     ]
     tipo_item = forms.ChoiceField(label="Tipo de Ítem", choices=TIPO_CHOICES, required=True)
-
-class PoblarBaseDatosForm(forms.Form):
-    num_elementos = forms.IntegerField(
-        label="Número de elementos",
-        min_value=1,
-        max_value=100000,
-        widget=forms.NumberInput,
-        required=True,
-        help_text="Ingresa el número de libros a crear (máximo 100,000)"
-    )
