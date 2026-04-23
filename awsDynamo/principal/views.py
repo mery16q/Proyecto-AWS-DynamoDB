@@ -8,7 +8,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from consultas import buscar_libro_por_isbn, buscar_por_autor, scan_por_tipo_item, obtener_tamano_tabla
-from .forms import LibroBusquedaIsbnForm, LibroBusquedaAutorForm, LibroBusquedaTipoForm
+from poblar_db import poblar_tabla
+from .forms import LibroBusquedaIsbnForm, LibroBusquedaAutorForm, LibroBusquedaTipoForm, PoblarBaseDatosForm
 
 
 def index(request):
@@ -109,3 +110,30 @@ def buscar_tipo(request):
         'tipo_busqueda': 'Tipo',
     }
     return render(request, 'principal/resultados.html', contexto)
+
+
+@require_http_methods(["GET", "POST"])
+def poblar_base_datos(request):
+    """Vista para poblar la base de datos con libros aleatorios."""
+    mensaje = ""
+    form = PoblarBaseDatosForm()
+    
+    if request.method == 'POST':
+        form = PoblarBaseDatosForm(request.POST)
+        if form.is_valid():
+            num_elementos = form.cleaned_data['num_elementos']
+            try:
+                poblar_tabla(num_elementos)
+                mensaje = f"¡Éxito! Se han creado {num_elementos} libros en la base de datos."
+            except Exception as e:
+                mensaje = f"Error al poblar la base de datos: {str(e)}"
+    
+    contexto = {
+        'form': form,
+        'mensaje': mensaje,
+        'form_isbn': LibroBusquedaIsbnForm(),
+        'form_autor': LibroBusquedaAutorForm(),
+        'form_tipo': LibroBusquedaTipoForm(),
+        'form_poblar': form,
+    }
+    return render(request, 'principal/poblar.html', contexto)

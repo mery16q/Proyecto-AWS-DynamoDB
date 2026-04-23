@@ -1,0 +1,57 @@
+{% extends 'principal/base.html' %}
+
+{% block title %}Poblar Base de Datos - Catálogo de Libros{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Page Title -->
+        <h2 class="mb-4">
+            <i class="bi bi-database-add"></i> Poblar Base de Datos
+        </h2>
+
+        <!-- Form Section -->
+        <div class="search-section mb-5">
+            <h5 class="mb-3">Crear libros aleatorios</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-8">
+                        {{ form.num_elementos }}
+                        {% if form.num_elementos.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ form.num_elementos.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-circle"></i> Poblar
+                        </button>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Ingresa el número de libros a crear (máximo 100,000)
+                </small>
+            </form>
+        </div>
+
+        <!-- Messages -->
+        {% if mensaje %}
+            <div class="alert {% if procesando %}alert-info{% else %}alert-success{% endif %} mb-4">
+                <i class="bi bi-{% if procesando %}hourglass-split{% else %}check-circle{% endif %}"></i> {{ mensaje }}
+                {% if procesando %}
+                <br><small>Revisa la consola del servidor para ver el progreso.</small>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Back Button -->
+        <div class="mt-5">
+            <a href="{% url 'principal:index' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
