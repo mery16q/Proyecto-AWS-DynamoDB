@@ -54,13 +54,10 @@ def generar_datos_libro(isbn):
         item['Paginas'] = random.randint(50, 1000)
     return item
 
-def poblar_todo():
+def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
     print("--- 🚀 INICIANDO POBLADO DE SISTEMA COMPLETO ---")
     vaciar_tabla()
     
-    num_libros = 50
-    num_usuarios = 10
-    num_autores = 5
 
     GENEROS = ['Ficción', 'No ficción', 'Ciencia ficción', 'Fantasía', 'Misterio', 'Romance', 'Historia', 'Biografía']
 

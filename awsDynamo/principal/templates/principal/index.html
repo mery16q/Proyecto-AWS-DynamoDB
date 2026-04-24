@@ -14,8 +14,8 @@
                 <div class="card text-center h-100">
                     <div class="card-body">
                         <i class="bi bi-search" style="font-size: 2rem; color: #667eea;"></i>
-                        <h5 class="card-title mt-3">Búsqueda Rápida</h5>
-                        <p class="card-text">Encuentra libros instantáneamente con ISBN</p>
+                        <h5 class="card-title mt-3">Búsqueda de libros</h5>
+                        <p class="card-text">Encuentra libros instantáneamente por ISBN, autor, título o tipo</p>
                     </div>
                 </div>
             </div>
@@ -23,8 +23,8 @@
                 <div class="card text-center h-100">
                     <div class="card-body">
                         <i class="bi bi-person" style="font-size: 2rem; color: #667eea;"></i>
-                        <h5 class="card-title mt-3">Por Autor</h5>
-                        <p class="card-text">Busca todos los libros de tu autor favorito</p>
+                        <h5 class="card-title mt-3">Búsqueda de usuario</h5>
+                        <p class="card-text">Encuentra información sobre un usuario específico</p>
                     </div>
                 </div>
             </div>
@@ -32,8 +32,8 @@
                 <div class="card text-center h-100">
                     <div class="card-body">
                         <i class="bi bi-tag" style="font-size: 2rem; color: #667eea;"></i>
-                        <h5 class="card-title mt-3">Por Tipo</h5>
-                        <p class="card-text">Filtra por Físico, Ebook o Audiolibro</p>
+                        <h5 class="card-title mt-3">Búsqueda de valoraciones por usuario</h5>
+                        <p class="card-text">Filtra valoraciones de un usuario específico</p>
                     </div>
                 </div>
             </div>
@@ -49,22 +49,24 @@
                     <form method="post" action="{% url 'principal:poblar_base_datos' %}">
                         {% csrf_token %}
                         <div class="row">
-                            <div class="col-md-8">
-                                {{ form_poblar.num_elementos }}
-                                {% if form_poblar.num_elementos.errors %}
-                                    <div class="alert alert-danger mt-2">
-                                        {{ form_poblar.num_elementos.errors }}
-                                    </div>
-                                {% endif %}
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form_poblar.num_libros.id_for_label }}" class="form-label">{{ form_poblar.num_libros.label }}</label>
+                                {{ form_poblar.num_libros }}
                             </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-success btn-search">
-                                    <i class="bi bi-plus-circle"></i> Poblar DB
-                                </button>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form_poblar.num_usuarios.id_for_label }}" class="form-label">{{ form_poblar.num_usuarios.label }}</label>
+                                {{ form_poblar.num_usuarios }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form_poblar.num_autores.id_for_label }}" class="form-label">{{ form_poblar.num_autores.label }}</label>
+                                {{ form_poblar.num_autores }}
                             </div>
                         </div>
+                        <button type="submit" class="btn btn-success btn-search w-100">
+                            <i class="bi bi-plus-circle"></i> Poblar DB
+                        </button>
                         <small class="text-muted d-block mt-2">
-                            Crea libros aleatorios en la base de datos DynamoDB
+                            Especifica la cantidad de libros, usuarios y autores a crear en DynamoDB
                         </small>
                     </form>
                 </div>

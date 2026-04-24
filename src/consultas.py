@@ -142,20 +142,6 @@ def buscar_usuario_por_email(email):
     )
     return resultado.get('Items', [])
 
-@medir_rendimiento
-def buscar_usuario_por_nombre(nombre):
-    respuesta = table.query(
-        IndexName='GSI_ByAttribute',
-        KeyConditionExpression=Key('AttributeName').eq('Nombre') & 
-                               Key('AttributeValue').begins_with(nombre)
-    )
-    items = respuesta.get('Items', [])
-    if not items:
-        return []
-    pk = items[0]['PK']
-    resultado = table.query(KeyConditionExpression=Key('PK').eq(pk))
-    return resultado.get('Items', [])
-
 #VALORACIONES
 
 @medir_rendimiento

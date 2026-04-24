@@ -29,3 +29,26 @@ class LibroBusquedaTipoForm(forms.Form):
         ('AUDIO', 'Audiolibro')
     ]
     tipo_item = forms.ChoiceField(label="Tipo de Ítem", choices=TIPO_CHOICES, required=True)
+
+class PoblarForm(forms.Form):
+    num_libros = forms.IntegerField(
+        label="Número de Libros",
+        min_value=1,
+        max_value=1000,
+        initial=50,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    num_usuarios = forms.IntegerField(
+        label="Número de Usuarios",
+        min_value=1,
+        max_value=500,
+        initial=10,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    num_autores = forms.IntegerField(
+        label="Número de Autores",
+        min_value=1,
+        max_value=200,
+        initial=5,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )

@@ -16,7 +16,6 @@ from consultas import (
     buscar_por_autor, 
     buscar_usuario_por_id,
     buscar_usuario_por_email,
-    buscar_usuario_por_nombre,
     consultar_valoraciones_por_usuario, 
     buscar_por_tipo_item,
     obtener_item,
@@ -35,7 +34,8 @@ from .forms import (
     UsuarioBusquedaEmailForm, 
     UsuarioBusquedaNombreForm, 
     ValoracionesUsuarioForm, 
-    LibroBusquedaTipoForm, 
+    LibroBusquedaTipoForm,
+    PoblarForm,
 )
 
 def get_cached_entity_count(cache_key, fetcher):
@@ -69,6 +69,7 @@ def index(request):
         'form_usuario_nombre': UsuarioBusquedaNombreForm(),
         'form_valoraciones': ValoracionesUsuarioForm(),
         'form_tipo': LibroBusquedaTipoForm(),
+        'form_poblar': PoblarForm(),
     }
     return render(request, 'principal/index.html', contexto)
 
@@ -149,7 +150,7 @@ def registrar_prestamo(request):
             mensaje = "Faltan datos."
             
     return render(request, 'principal/prestamo.html', {
-        'mensaje': mensaje, 'total_tabla': get_cached_table_size()
+        'mensaje': mensaje
     })
 
 @require_http_methods(["GET", "POST"])
@@ -328,25 +329,26 @@ def editar_item(request):
 
 @require_http_methods(["GET", "POST"])
 def poblar_base_datos(request):
-    """Vista para poblar la base de datos con libros aleatorios."""
+    """Vista para poblar la base de datos con libros, usuarios y autores aleatorios."""
     mensaje = ""
+    form = PoblarForm()
     
     if request.method == 'POST':
-        try:
-            poblar_todo()
-            mensaje = "¡Éxito! Se han creado 100 libros en la base de datos."
-        except Exception as e:
-            mensaje = f"Error al poblar la base de datos: {str(e)}"
+        form = PoblarForm(request.POST)
+        if form.is_valid():
+            try:
+                num_libros = form.cleaned_data['num_libros']
+                num_usuarios = form.cleaned_data['num_usuarios']
+                num_autores = form.cleaned_data['num_autores']
+                
+                poblar_todo(num_libros, num_usuarios, num_autores)
+                mensaje = f"¡Éxito! Se han creado {num_libros} libros, {num_usuarios} usuarios y {num_autores} autores."
+                form = PoblarForm()
+            except Exception as e:
+                mensaje = f"Error al poblar la base de datos: {str(e)}"
     
     contexto = {
         'mensaje': mensaje,
-        'form_isbn': LibroBusquedaIsbnForm(),
-        'form_autor': LibroBusquedaAutorForm(),
-        'form_titulo': LibroBusquedaTituloForm(),
-        'form_usuario_id': UsuarioBusquedaIdForm(),
-        'form_usuario_email': UsuarioBusquedaEmailForm(),
-        'form_usuario_nombre': UsuarioBusquedaNombreForm(),
-        'form_valoraciones': ValoracionesUsuarioForm(),
-        'form_tipo': LibroBusquedaTipoForm(),
+        'form': form,
     }
     return render(request, 'principal/poblar.html', contexto)
