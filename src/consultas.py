@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuración
 dynamodb = boto3.resource(
     'dynamodb',
     region_name=os.getenv('AWS_REGION', 'us-east-1'),
@@ -17,17 +16,15 @@ dynamodb = boto3.resource(
 client = dynamodb.meta.client
 table = dynamodb.Table('CatalogoLibros')
 
-# --- DECORADOR ---
 def medir_rendimiento(func):
+    """Decorador para devolver el resultado y el tiempo de ejecución."""
     def wrapper(*args, **kwargs):
         inicio = time.perf_counter()
         resultado = func(*args, **kwargs)
         fin = time.perf_counter()
-        print(f"⏱️ [{func.__name__}]: {(fin - inicio)*1000:.2f} ms")
+        print(f"[{func.__name__}]: {(fin - inicio)*1000:.2f} ms")
         return resultado, round((fin - inicio)*1000, 2)
     return wrapper
-
-# --- LÓGICA DE DATOS ---
 
 def obtener_metadatos_en_batch(lista_de_claves):
     if not lista_de_claves: return []
@@ -52,7 +49,6 @@ def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
                         'FechaInicio': datos_prestamo['fecha_inicio'], 
                         'FechaFin': datos_prestamo['fecha_fin'], 
                         'Estado': 'ACTIVO',
-                        # <--- AQUÍ ES DONDE LO TIENES QUE PONER:
                         'ttl_expiration': {'N': str(tiempo_expiracion)}
                     }
                 }
@@ -82,49 +78,128 @@ def buscar_por_atributo_batch(attr_name, value):
 
 @medir_rendimiento
 def buscar_libro_por_isbn(isbn):
-    return table.get_item(Key={'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}).get('Item')
-
-@medir_rendimiento
-def buscar_usuario_por_id(user_id):
-    return table.get_item(Key={'PK': f'USER#{user_id}', 'SK': 'METADATOS'}).get('Item')
-
-@medir_rendimiento
-def buscar_usuario_por_email(email):
-    return buscar_por_atributo_batch('Email', email)[0] # Simplificado para el ejemplo
-
-@medir_rendimiento
-def buscar_usuario_por_nombre(nombre):
-    return buscar_por_atributo_batch('Nombre', nombre)[0]
+    """Búsqueda directa por Clave Primaria (PK)."""
+    respuesta = table.get_item(
+        Key={'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}
+    )
+    return respuesta.get('Item')
 
 @medir_rendimiento
 def buscar_libros_por_titulo(titulo):
-    return buscar_por_atributo_batch('Titulo', titulo)[0]
+    """Búsqueda eficiente usando el GSI_ByAttribute."""
+    # Usamos begins_with para que el usuario pueda escribir "Harry" y encuentre "Harry Potter"
+    respuesta = table.query(
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('Titulo') & 
+                               Key('AttributeValue').begins_with(titulo)
+    )
+    return respuesta.get('Items', [])
 
 @medir_rendimiento
 def buscar_por_autor(autor):
-    return buscar_por_atributo_batch('Autor', autor)[0]
+    """Búsqueda por autor usando GSI (Eficiente).
+    Aquí se usa query, debido que se le pasa la PK del índice secundario (Autor) y se obtiene directamente l
+    os libros escritos por ese autor sin necesidad de escanear toda la tabla.
+    """
+    respuesta = table.query(
+        IndexName='AutorIndex',
+        KeyConditionExpression=Key('Autor').eq(autor)
+    )
+    return respuesta.get('Items', [])
+
+@medir_rendimiento
+def buscar_usuario_por_id(user_id):
+    """Busca un usuario específico por su ID de perfil."""
+    respuesta = table.get_item(
+        Key={'PK': f'USER#{user_id}', 'SK': 'PROFILE'}
+    )
+    return respuesta.get('Item')
+
+
+#PK: USUARIO
+
+@medir_rendimiento
+def buscar_usuario_por_email(email):
+    # Paso 1: buscar el puntero en el GSI
+    respuesta = table.query(
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('Email') & 
+                               Key('AttributeValue').eq(email)
+    )
+    items = respuesta.get('Items', [])
+    if not items:
+        return []
+    
+    # Paso 2: con la PK encontrada, traer todos los ítems del usuario
+    pk = items[0]['PK']  # ej: USER#8
+    resultado = table.query(
+        KeyConditionExpression=Key('PK').eq(pk)
+    )
+    return resultado.get('Items', [])
+
+@medir_rendimiento
+def buscar_usuario_por_nombre(nombre):
+    """Búsqueda por nombre (prefix search)."""
+    respuesta = table.query(
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('Nombre') & 
+                               Key('AttributeValue').begins_with(nombre)
+    )
+    return respuesta.get('Items', [])
+
+#VALORACIONES
 
 @medir_rendimiento
 def consultar_valoraciones_por_usuario(user_id):
-    return table.query(KeyConditionExpression=Key('PK').eq(f'USER#{user_id}') & Key('SK').begins_with('VALORACION#')).get('Items', [])
-
-@medir_rendimiento
-def scan_por_tipo_item(tipo):
-    resp = table.scan(FilterExpression=Attr('EntityType').eq(tipo))
+    """
+    Busca todas las valoraciones de un usuario usando el GSI.
+    """
+    resp = table.query(
+        IndexName='GSI_User_Ratings',
+        KeyConditionExpression=Key('UserID').eq(f'USER#{user_id}')
+    )
     return resp.get('Items', [])
 
 @medir_rendimiento
-def obtener_item(pk, sk):
-    return table.get_item(Key={'PK': pk, 'SK': sk}).get('Item')
+def buscar_por_tipo_item(tipo):
+    resp = table.query(
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('TipoItem') & 
+                               Key('AttributeValue').eq(tipo)
+    )
+    return resp.get('Items', [])
 
-@medir_rendimiento
+def obtener_item(pk, sk):
+    """
+    Esta función estaba perfecta. Búsqueda directa y barata.
+    """
+    return table.get_item(
+        Key={'PK': pk, 'SK': sk}
+    ).get('Item')
+
 def actualizar_item(pk, sk, atributos):
+    """
+    Actualiza el ítem y te lo devuelve actualizado en una sola petición.
+    """
     update_expr = "SET " + ", ".join([f"#{k} = :{k}" for k in atributos.keys()])
     expr_names = {f"#{k}": k for k in atributos.keys()}
     expr_vals = {f":{k}": v for k, v in atributos.items()}
-    table.update_item(Key={'PK': pk, 'SK': sk}, UpdateExpression=update_expr, ExpressionAttributeNames=expr_names, ExpressionAttributeValues=expr_vals)
-    return obtener_item(pk, sk)
+    
+    resp = table.update_item(
+        Key={'PK': pk, 'SK': sk}, 
+        UpdateExpression=update_expr, 
+        ExpressionAttributeNames=expr_names, 
+        ExpressionAttributeValues=expr_vals,
+        ReturnValues='ALL_NEW' 
+    )
+    return resp.get('Attributes')
 
 @medir_rendimiento
 def obtener_tamano_tabla():
-    return table.scan(Select='COUNT').get('Count', 0)
+    """
+    Obtiene el total de registros casi al instante y GRATIS.
+    Nota: Se actualiza cada ~6 horas, por lo que es un aproximado,
+    pero es el estándar de la industria frente al costosísimo Scan.
+    """
+    resp = client.describe_table(TableName='CatalogoLibros')
+    return resp['Table'].get('ItemCount', 0)

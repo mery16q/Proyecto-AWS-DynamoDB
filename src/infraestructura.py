@@ -1,18 +1,17 @@
-import os
 import boto3
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 dynamodb = boto3.resource(
     'dynamodb',
-    region_name=os.getenv('AWS_REGION'),
+    region_name=os.getenv('AWS_REGION', 'us-east-1'),
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
 
 def crear_tabla():
-    print("Creando tabla 'CatalogoLibros'...")
     try:
         tabla = dynamodb.create_table(
             TableName='CatalogoLibros',
@@ -23,24 +22,37 @@ def crear_tabla():
             AttributeDefinitions=[
                 {'AttributeName': 'PK', 'AttributeType': 'S'},
                 {'AttributeName': 'SK', 'AttributeType': 'S'},
-                {'AttributeName': 'Autor', 'AttributeType': 'S'}
+                {'AttributeName': 'Autor', 'AttributeType': 'S'},
+                {'AttributeName': 'AttributeName', 'AttributeType': 'S'}, 
+                {'AttributeName': 'AttributeValue', 'AttributeType': 'S'},
+                {'AttributeName': 'UserID', 'KeyType': 'S'} # OJO: Si usas UserID, debe ser S
             ],
             GlobalSecondaryIndexes=[
                 {
                     'IndexName': 'AutorIndex',
+                    'KeySchema': [{'AttributeName': 'Autor', 'KeyType': 'HASH'}],
+                    'Projection': {'ProjectionType': 'ALL'}
+                },
+                {
+                    'IndexName': 'GSI_ByAttribute',
                     'KeySchema': [
-                        {'AttributeName': 'Autor', 'KeyType': 'HASH'}
+                        {'AttributeName': 'AttributeName', 'KeyType': 'HASH'},
+                        {'AttributeName': 'AttributeValue', 'KeyType': 'RANGE'}
                     ],
+                    'Projection': {'ProjectionType': 'ALL'}
+                },
+                {
+                    'IndexName': 'GSI_User_Ratings',
+                    'KeySchema': [{'AttributeName': 'UserID', 'KeyType': 'HASH'}],
                     'Projection': {'ProjectionType': 'ALL'}
                 }
             ],
-            BillingMode='PAY_PER_REQUEST' 
+            BillingMode='PAY_PER_REQUEST'
         )
-        print("Tabla creada. Esperando a que esté lista...")
         tabla.wait_until_exists()
-        print("¡Tabla lista para usar!")
+        print("Tabla creada correctamente.")
     except Exception as e:
-        print(f"Error al crear: {e}")
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     crear_tabla()

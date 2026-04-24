@@ -1,22 +1,28 @@
-#encoding:utf-8
+# encoding:utf-8
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+from django.core.cache import cache # Para optimizar el tamaño de la tabla
 import sys
 import os
 
-# Agregar la ruta src al path
+# Configuración de ruta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Importamos las funciones optimizadas de consultas.py
+# Importaciones de consultas
 from consultas import (
     buscar_libro_por_isbn,
-    buscar_por_atributo_batch, # Usaremos esta para Autor, Título, Email, etc.
+    buscar_por_atributo_batch, 
+    buscar_libros_por_titulo,  
+    buscar_por_autor, 
     buscar_usuario_por_id,
+    buscar_usuario_por_email,
+    buscar_usuario_por_nombre,
     consultar_valoraciones_por_usuario, 
-    scan_por_tipo_item,
+    buscar_por_tipo_item,
     obtener_item,
     actualizar_item,
-    obtener_tamano_tabla
+    obtener_tamano_tabla,
+    registrar_prestamo_transaccional
 )
 from poblar_db import poblar_todo
 from .forms import (
@@ -30,8 +36,17 @@ from .forms import (
     LibroBusquedaTipoForm, 
 )
 
+# --- HELPER PARA RENDIMIENTO ---
+def get_cached_table_size():
+    total = cache.get('dynamodb_table_size')
+    if total is None:
+        total = obtener_tamano_tabla()
+        cache.set('dynamodb_table_size', total, 3600) # Cache 1 hora
+    return total
+
+# --- VISTAS ---
+
 def index(request):
-    """Vista de inicio con formularios de búsqueda."""
     contexto = {
         'form_isbn': LibroBusquedaIsbnForm(),
         'form_autor': LibroBusquedaAutorForm(),
@@ -41,88 +56,85 @@ def index(request):
         'form_usuario_nombre': UsuarioBusquedaNombreForm(),
         'form_valoraciones': ValoracionesUsuarioForm(),
         'form_tipo': LibroBusquedaTipoForm(),
+        'total_tabla': get_cached_table_size(),
     }
     return render(request, 'principal/index.html', contexto)
 
 @require_http_methods(["GET", "POST"])
 def buscar_isbn(request):
-    resultados = []
-    mensaje = ""
-    tiempo = 0
-    form = LibroBusquedaIsbnForm()
-    
+    resultados, mensaje, tiempo, form = [], "", 0, LibroBusquedaIsbnForm()
     if request.method == 'POST':
         form = LibroBusquedaIsbnForm(request.POST)
         if form.is_valid():
-            isbn = form.cleaned_data['isbn']
-            try:
-                # Consulta simple (no requiere batch)
-                libro, tiempo = buscar_libro_por_isbn(isbn)
-                if libro:
-                    resultados = [libro]
-                else:
-                    mensaje = f"No se encontró libro con ISBN: {isbn}"
-            except Exception as e:
-                mensaje = f"Error en la búsqueda: {str(e)}"
+            libro, tiempo = buscar_libro_por_isbn(form.cleaned_data['isbn'])
+            resultados = [libro] if libro else []
+            mensaje = "" if libro else "No se encontró libro."
     
-    total_tabla = obtener_tamano_tabla()
-    contexto = {
+    return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'ISBN',
-    }
-    return render(request, 'principal/resultados.html', contexto)
+        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'ISBN'
+    })
 
 @require_http_methods(["GET", "POST"])
 def buscar_autor(request):
-    resultados = []
-    mensaje = ""
-    tiempo = 0
-    form = LibroBusquedaAutorForm()
-    
+    resultados, mensaje, tiempo, form = [], "", 0, LibroBusquedaAutorForm()
     if request.method == 'POST':
         form = LibroBusquedaAutorForm(request.POST)
         if form.is_valid():
-            autor = form.cleaned_data['autor']
-            try:
-                # Llamada optimizada usando el GSI y BatchGetItem
-                resultados, tiempo = buscar_por_atributo_batch('Autor', autor)
-                if not resultados:
-                    mensaje = f"No se encontraron libros del autor: {autor}"
-            except Exception as e:
-                mensaje = f"Error en la búsqueda: {str(e)}"
+            # Usamos la función específica
+            resultados, tiempo = buscar_por_autor(form.cleaned_data['autor'])
+            if not resultados: mensaje = "No se encontraron libros del autor."
     
-    total_tabla = obtener_tamano_tabla()
-    contexto = {
+    return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Autor',
-    }
-    return render(request, 'principal/resultados.html', contexto)
+        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Autor'
+    })
 
 @require_http_methods(["GET", "POST"])
 def buscar_titulo(request):
-    resultados = []
-    mensaje = ""
-    tiempo = 0
-    form = LibroBusquedaTituloForm()
-    
+    resultados, mensaje, tiempo, form = [], "", 0, LibroBusquedaTituloForm()
     if request.method == 'POST':
         form = LibroBusquedaTituloForm(request.POST)
         if form.is_valid():
-            titulo = form.cleaned_data['titulo']
-            try:
-                # Llamada optimizada
-                resultados, tiempo = buscar_por_atributo_batch('Titulo', titulo)
-                if not resultados:
-                    mensaje = f"No se encontraron libros con título: {titulo}"
-            except Exception as e:
-                mensaje = f"Error en la búsqueda: {str(e)}"
-    
-    total_tabla = obtener_tamano_tabla()
-    contexto = {
+            # Usamos la función específica para búsqueda de texto
+            resultados, tiempo = buscar_libros_por_titulo(form.cleaned_data['titulo'])
+            if not resultados: mensaje = "No se encontraron libros con ese título."
+            
+    return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Título',
-    }
-    return render(request, 'principal/resultados.html', contexto)
+        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Título'
+    })
+
+@require_http_methods(["GET", "POST"])
+def buscar_usuario_email(request):
+    resultados, mensaje, tiempo, form = [], "", 0, UsuarioBusquedaEmailForm()
+    if request.method == 'POST':
+        form = UsuarioBusquedaEmailForm(request.POST)
+        if form.is_valid():
+            resultados, tiempo = buscar_usuario_por_email(form.cleaned_data['email'])
+            if not resultados: mensaje = "No se encontró usuario con ese email."
+            
+    return render(request, 'principal/resultados.html', {
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Usuario por Email'
+    })
+
+@require_http_methods(["GET", "POST"])
+def registrar_prestamo(request):
+    """Vista nueva para la función transaccional."""
+    mensaje = ""
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        isbn = request.POST.get('isbn')
+        if user_id and isbn:
+            exito = registrar_prestamo_transaccional(user_id, isbn, "2026-04-24", "2026-05-09")
+            mensaje = "✅ Préstamo registrado" if exito else "❌ Error en transacción"
+        else:
+            mensaje = "Faltan datos."
+            
+    return render(request, 'principal/prestamo.html', {
+        'mensaje': mensaje, 'total_tabla': get_cached_table_size()
+    })
 
 @require_http_methods(["GET", "POST"])
 def buscar_usuario_id(request):
@@ -149,32 +161,6 @@ def buscar_usuario_id(request):
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
         'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por ID',
-    }
-    return render(request, 'principal/resultados.html', contexto)
-
-@require_http_methods(["GET", "POST"])
-def buscar_usuario_email(request):
-    resultados = []
-    mensaje = ""
-    tiempo = 0
-    form = UsuarioBusquedaEmailForm()
-    
-    if request.method == 'POST':
-        form = UsuarioBusquedaEmailForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            try:
-                # Llamada optimizada
-                resultados, tiempo = buscar_por_atributo_batch('Email', email)
-                if not resultados:
-                    mensaje = f"No se encontraron usuarios con email: {email}"
-            except Exception as e:
-                mensaje = f"Error en la búsqueda: {str(e)}"
-    
-    total_tabla = obtener_tamano_tabla()
-    contexto = {
-        'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por Email',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -245,7 +231,7 @@ def buscar_tipo(request):
         if form.is_valid():
             tipo_item = form.cleaned_data['tipo_item']
             try:
-                resultados, tiempo = scan_por_tipo_item(tipo_item)
+                resultados, tiempo = buscar_por_tipo_item(tipo_item)
                 if not resultados:
                     mensaje = f"No se encontraron items de tipo: {tipo_item}"
             except Exception as e:

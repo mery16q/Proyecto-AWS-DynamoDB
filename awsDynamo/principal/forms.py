@@ -14,7 +14,7 @@ class UsuarioBusquedaIdForm(forms.Form):
     user_id = forms.CharField(label="ID de Usuario", widget=forms.TextInput, required=True)
 
 class UsuarioBusquedaEmailForm(forms.Form):
-    email = forms.EmailField(label="Email", widget=forms.EmailInput, required=True)
+    email = forms.CharField(label="Email", required=True)
 
 class UsuarioBusquedaNombreForm(forms.Form):
     nombre = forms.CharField(label="Nombre", widget=forms.TextInput, required=True)

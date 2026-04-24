@@ -61,50 +61,118 @@ def poblar_todo():
     num_libros = 50
     num_usuarios = 10
     num_autores = 5
-    
+
+    GENEROS = ['Ficción', 'No ficción', 'Ciencia ficción', 'Fantasía', 'Misterio', 'Romance', 'Historia', 'Biografía']
+
     with table.batch_writer() as batch:
+
         # 1. Crear Autores
         lista_autores = [fake.unique.name() for _ in range(num_autores)]
         for nombre in lista_autores:
+            pk = f'AUTHOR#{nombre.replace(" ", "_").upper()}'
             batch.put_item(Item={
-                'PK': f'AUTHOR#{nombre.replace(" ", "_").upper()}',
+                'PK': pk,
                 'SK': 'METADATOS',
                 'EntityType': 'AUTOR',
                 'Nombre': nombre,
-                'Biografia': "Escritor destacado del catálogo."
+                'Biografia': fake.sentence()
             })
-        
-        # 2. Crear Usuarios
-        lista_uids = [f"USER{i}" for i in range(1, num_usuarios + 1)]
-        for uid in lista_uids:
+            # Puntero GSI por Nombre
             batch.put_item(Item={
-                'PK': f'USER#{uid}',
+                'PK': pk,
+                'SK': 'Nombre',
+                'AttributeName': 'Nombre',
+                'AttributeValue': nombre
+            })
+
+        # 2. Crear Usuarios
+        lista_uids = [f"{i}" for i in range(1, num_usuarios + 1)]
+        for uid in lista_uids:
+            nombre_usuario = fake.unique.name()
+            email_usuario  = fake.unique.email()
+            pk = f'USER#{uid}'
+
+            batch.put_item(Item={
+                'PK': pk,
                 'SK': 'PROFILE',
                 'EntityType': 'USUARIO',
-                'Nombre': fake.unique.name(),
-                'Email': fake.unique.email()
+                'Nombre': nombre_usuario,
+                'Email': email_usuario
             })
-            
-        # 3. Crear Libros y sus Valoraciones
+            # Punteros GSI
+            batch.put_item(Item={
+                'PK': pk, 'SK': 'Email',
+                'AttributeName': 'Email',
+                'AttributeValue': email_usuario
+            })
+            batch.put_item(Item={
+                'PK': pk, 'SK': 'Nombre',
+                'AttributeName': 'Nombre',
+                'AttributeValue': nombre_usuario
+            })
+
+        # 3. Crear Libros y Valoraciones
         lista_isbns = []
         for _ in range(num_libros):
-            isbn = fake.unique.isbn13()
+            isbn  = fake.unique.isbn13()
             lista_isbns.append(isbn)
-            
-            # Insertar Libro
-            batch.put_item(Item=generar_datos_libro(isbn))
-            
-            # Valoraciones (1 a 3 por libro) con usuarios únicos por libro
+            pk    = f'LIBRO#{isbn}'
+            autor = fake.name()
+            titulo = fake.sentence(nb_words=3).replace('.', '')
+            genero = random.choice(GENEROS)
+            anio   = str(random.randint(1950, 2024))
+            tipo   = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
+
+            # Item principal
+            item = {
+                'PK': pk,
+                'SK': 'METADATOS',
+                'EntityType': 'LIBRO',
+                'ISBN': isbn,
+                'Titulo': titulo,
+                'Autor': autor,
+                'Genero': genero,
+                'Anio': anio,
+                'TipoItem': tipo,
+            }
+            if tipo == 'EBOOK':
+                item['Formato'] = random.choice(['PDF', 'EPUB'])
+                item['TamanoArchivo'] = f"{random.randint(1, 50)}MB"
+            elif tipo == 'AUDIO':
+                item['DuracionMinutos'] = random.randint(60, 900)
+                item['Narrador'] = fake.name()
+            else:
+                item['Paginas'] = random.randint(50, 1000)
+
+            batch.put_item(Item=item)
+
+            # Punteros GSI
+            for attr_name, attr_value in [
+                ('Titulo',   titulo),
+                ('Autor',    autor),
+                ('Genero',   genero),
+                ('TipoItem', tipo),
+            ]:
+                batch.put_item(Item={
+                    'PK': pk,
+                    'SK': attr_name,
+                    'AttributeName': attr_name,
+                    'AttributeValue': attr_value
+                })
+
+            # Valoraciones
             usuarios_valoracion = random.sample(lista_uids, k=random.randint(1, min(3, len(lista_uids))))
             for uid in usuarios_valoracion:
                 batch.put_item(Item={
-                    'PK': f'LIBRO#{isbn}',
+                    'PK': pk,
                     'SK': f'RATING#{uid}',
                     'EntityType': 'VALORACION',
+                    'UserID': f'USER#{uid}',
+                    'Fecha': str(fake.date_between(start_date='-1y', end_date='today')),
                     'Puntuacion': random.randint(1, 5),
                     'Comentario': fake.sentence()
                 })
-                
+
         # 4. Crear Préstamos
         used_loan_ids = set()
         while len(used_loan_ids) < 30:
@@ -112,15 +180,19 @@ def poblar_todo():
             if loan_id in used_loan_ids:
                 continue
             used_loan_ids.add(loan_id)
+            fecha_prestamo   = fake.date_between(start_date='-1y', end_date='today')
+            fecha_devolucion = fake.date_between(start_date=fecha_prestamo, end_date='+30d')
             batch.put_item(Item={
                 'PK': f'USER#{random.choice(lista_uids)}',
                 'SK': f'LOAN#{loan_id}',
                 'EntityType': 'PRESTAMO',
                 'ISBN_Libro': f'LIBRO#{random.choice(lista_isbns)}',
-                'Estado': 'ACTIVO'
+                'Estado': 'ACTIVO',
+                'FechaPrestamo':   str(fecha_prestamo),
+                'FechaDevolucion': str(fecha_devolucion),
             })
 
     print("✅ Datos inyectados correctamente.")
-
+    
 if __name__ == "__main__":
     poblar_todo()
