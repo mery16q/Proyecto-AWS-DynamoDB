@@ -7,13 +7,11 @@ import os
 # Agregar la ruta src al path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
+# Importamos las funciones optimizadas de consultas.py
 from consultas import (
-    buscar_libro_por_isbn, 
-    buscar_libros_por_titulo, 
-    buscar_por_autor, 
-    buscar_usuario_por_id, 
-    buscar_usuario_por_email, 
-    buscar_usuario_por_nombre, 
+    buscar_libro_por_isbn,
+    buscar_por_atributo_batch, # Usaremos esta para Autor, Título, Email, etc.
+    buscar_usuario_por_id,
     consultar_valoraciones_por_usuario, 
     scan_por_tipo_item,
     obtener_item,
@@ -32,7 +30,6 @@ from .forms import (
     LibroBusquedaTipoForm, 
 )
 
-
 def index(request):
     """Vista de inicio con formularios de búsqueda."""
     contexto = {
@@ -47,7 +44,6 @@ def index(request):
     }
     return render(request, 'principal/index.html', contexto)
 
-
 @require_http_methods(["GET", "POST"])
 def buscar_isbn(request):
     resultados = []
@@ -60,6 +56,7 @@ def buscar_isbn(request):
         if form.is_valid():
             isbn = form.cleaned_data['isbn']
             try:
+                # Consulta simple (no requiere batch)
                 libro, tiempo = buscar_libro_por_isbn(isbn)
                 if libro:
                     resultados = [libro]
@@ -70,12 +67,8 @@ def buscar_isbn(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'ISBN',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'ISBN',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -91,7 +84,8 @@ def buscar_autor(request):
         if form.is_valid():
             autor = form.cleaned_data['autor']
             try:
-                resultados, tiempo = buscar_por_autor(autor)
+                # Llamada optimizada usando el GSI y BatchGetItem
+                resultados, tiempo = buscar_por_atributo_batch('Autor', autor)
                 if not resultados:
                     mensaje = f"No se encontraron libros del autor: {autor}"
             except Exception as e:
@@ -99,12 +93,8 @@ def buscar_autor(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Autor',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Autor',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -120,7 +110,8 @@ def buscar_titulo(request):
         if form.is_valid():
             titulo = form.cleaned_data['titulo']
             try:
-                resultados, tiempo = buscar_libros_por_titulo(titulo)
+                # Llamada optimizada
+                resultados, tiempo = buscar_por_atributo_batch('Titulo', titulo)
                 if not resultados:
                     mensaje = f"No se encontraron libros con título: {titulo}"
             except Exception as e:
@@ -128,12 +119,8 @@ def buscar_titulo(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Título',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Título',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -149,6 +136,7 @@ def buscar_usuario_id(request):
         if form.is_valid():
             user_id = form.cleaned_data['user_id']
             try:
+                # Consulta simple (no requiere batch)
                 usuario, tiempo = buscar_usuario_por_id(user_id)
                 if usuario:
                     resultados = [usuario]
@@ -159,12 +147,8 @@ def buscar_usuario_id(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Usuario por ID',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por ID',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -180,7 +164,8 @@ def buscar_usuario_email(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             try:
-                resultados, tiempo = buscar_usuario_por_email(email)
+                # Llamada optimizada
+                resultados, tiempo = buscar_por_atributo_batch('Email', email)
                 if not resultados:
                     mensaje = f"No se encontraron usuarios con email: {email}"
             except Exception as e:
@@ -188,12 +173,8 @@ def buscar_usuario_email(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Usuario por Email',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por Email',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -209,7 +190,8 @@ def buscar_usuario_nombre(request):
         if form.is_valid():
             nombre = form.cleaned_data['nombre']
             try:
-                resultados, tiempo = buscar_usuario_por_nombre(nombre)
+                # Llamada optimizada
+                resultados, tiempo = buscar_por_atributo_batch('Nombre', nombre)
                 if not resultados:
                     mensaje = f"No se encontraron usuarios con nombre: {nombre}"
             except Exception as e:
@@ -217,12 +199,8 @@ def buscar_usuario_nombre(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Usuario por Nombre',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por Nombre',
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -238,6 +216,8 @@ def consultar_valoraciones_usuario(request):
         if form.is_valid():
             user_id = form.cleaned_data['user_id']
             try:
+                # Aquí podrías usar una función similar si fuera necesario, 
+                # pero mantenemos la lógica actual si está funcionando bien.
                 resultados, tiempo = consultar_valoraciones_por_usuario(user_id)
                 if not resultados:
                     mensaje = f"No se encontraron valoraciones para el usuario: {user_id}"
@@ -246,14 +226,12 @@ def consultar_valoraciones_usuario(request):
     
     total_tabla = obtener_tamano_tabla()
     contexto = {
-        'form': form,
-        'resultados': resultados,
-        'mensaje': mensaje,
-        'tiempo': tiempo,
-        'total_tabla': total_tabla,
-        'tipo_busqueda': 'Valoraciones por Usuario',
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Valoraciones por Usuario',
     }
     return render(request, 'principal/resultados.html', contexto)
+
+# ... (El resto de funciones como editar_item y poblar_base_datos siguen igual)
 
 @require_http_methods(["GET", "POST"])
 def buscar_tipo(request):
@@ -283,7 +261,6 @@ def buscar_tipo(request):
         'tipo_busqueda': 'Tipo',
     }
     return render(request, 'principal/resultados.html', contexto)
-
 
 @require_http_methods(["GET", "POST"])
 def editar_item(request):
@@ -342,7 +319,6 @@ def editar_item(request):
         'mensaje': mensaje,
     }
     return render(request, 'principal/editar.html', contexto)
-
 
 @require_http_methods(["GET", "POST"])
 def poblar_base_datos(request):

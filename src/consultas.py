@@ -2,6 +2,7 @@ import os
 import boto3
 import time
 from boto3.dynamodb.conditions import Key, Attr
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,127 +10,121 @@ load_dotenv()
 # Configuración
 dynamodb = boto3.resource(
     'dynamodb',
-    region_name=os.getenv('AWS_REGION'),
+    region_name=os.getenv('AWS_REGION', 'us-east-1'),
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
+client = dynamodb.meta.client
 table = dynamodb.Table('CatalogoLibros')
 
+# --- DECORADOR ---
 def medir_rendimiento(func):
-    """Decorador para devolver el resultado y el tiempo de ejecución."""
     def wrapper(*args, **kwargs):
         inicio = time.perf_counter()
         resultado = func(*args, **kwargs)
         fin = time.perf_counter()
-        latencia = (fin - inicio) * 1000  # En milisegundos
-        print(f"⏱️ Consulta [{func.__name__}]: {latencia:.2f} ms")
-        return resultado, round(latencia, 2)
+        print(f"⏱️ [{func.__name__}]: {(fin - inicio)*1000:.2f} ms")
+        return resultado, round((fin - inicio)*1000, 2)
     return wrapper
 
-# --- BÚSQUEDAS DE LIBROS ---
+# --- LÓGICA DE DATOS ---
+
+def obtener_metadatos_en_batch(lista_de_claves):
+    if not lista_de_claves: return []
+    respuesta = dynamodb.batch_get_item(RequestItems={'CatalogoLibros': {'Keys': lista_de_claves}})
+    return respuesta['Responses'].get('CatalogoLibros', [])
+
+@medir_rendimiento
+def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
+    # 1. Calcula el tiempo ANTES de intentar la transacción
+    # (30 días en el futuro)
+    tiempo_expiracion = int(time.time()) + (30 * 24 * 60 * 60)
+    
+    try:
+        client.transact_write_items(TransactItems=[
+            {
+                'Put': {
+                    'TableName': 'CatalogoLibros', 
+                    'Item': {
+                        'PK': f'USER#{user_id}', 
+                        'SK': f'PRESTAMO#{isbn}', 
+                        'EntityType': 'PRESTAMO', 
+                        'FechaInicio': datos_prestamo['fecha_inicio'], 
+                        'FechaFin': datos_prestamo['fecha_fin'], 
+                        'Estado': 'ACTIVO',
+                        # <--- AQUÍ ES DONDE LO TIENES QUE PONER:
+                        'ttl_expiration': {'N': str(tiempo_expiracion)}
+                    }
+                }
+            },
+            {
+                'Update': {
+                    'TableName': 'CatalogoLibros', 
+                    'Key': {'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}, 
+                    'UpdateExpression': 'SET #est = :nuevo', 
+                    'ConditionExpression': '#est = :disp', 
+                    'ExpressionAttributeNames': {'#est': 'Estado'}, 
+                    'ExpressionAttributeValues': {':nuevo': 'PRESTADO', ':disp': 'DISPONIBLE'}
+                }
+            }
+        ])
+        return True
+    except ClientError as e:
+        print(f"Error en transacción: {e}")
+        return False
+
+@medir_rendimiento
+def buscar_por_atributo_batch(attr_name, value):
+    resp = table.query(IndexName='GSI_ByAttribute', KeyConditionExpression=Key('AttributeName').eq(attr_name) & Key('AttributeValue').eq(value))
+    items = resp.get('Items', [])
+    if not items: return []
+    return obtener_metadatos_en_batch([{'PK': i['PK'], 'SK': i['SK']} for i in items])
 
 @medir_rendimiento
 def buscar_libro_por_isbn(isbn):
-    """Búsqueda directa por Clave Primaria (PK)."""
-    respuesta = table.get_item(
-        Key={'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}
-    )
-    return respuesta.get('Item')
-
-@medir_rendimiento
-def buscar_libros_por_titulo(titulo):
-    """Búsqueda de libros por título (Scan con filtro)."""
-    respuesta = table.scan(
-        FilterExpression=Attr('EntityType').eq('LIBRO') & Attr('Titulo').contains(titulo)
-    )
-    return respuesta.get('Items', [])
-
-@medir_rendimiento
-def buscar_por_autor(autor):
-    """Búsqueda por autor usando GSI (Eficiente)."""
-    respuesta = table.query(
-        IndexName='AutorIndex',
-        KeyConditionExpression=Key('Autor').eq(autor)
-    )
-    return respuesta.get('Items', [])
-
-
-# --- BÚSQUEDAS DE USUARIOS ---
+    return table.get_item(Key={'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}).get('Item')
 
 @medir_rendimiento
 def buscar_usuario_por_id(user_id):
-    """Busca un usuario específico por su ID de perfil."""
-    respuesta = table.get_item(
-        Key={'PK': f'USER#{user_id}', 'SK': 'PROFILE'}
-    )
-    return respuesta.get('Item')
+    return table.get_item(Key={'PK': f'USER#{user_id}', 'SK': 'METADATOS'}).get('Item')
 
 @medir_rendimiento
 def buscar_usuario_por_email(email):
-    """Busca usuarios por email (Scan con filtro)."""
-    respuesta = table.scan(
-        FilterExpression=Attr('EntityType').eq('USUARIO') & Attr('Email').eq(email)
-    )
-    return respuesta.get('Items', [])
+    return buscar_por_atributo_batch('Email', email)[0] # Simplificado para el ejemplo
 
 @medir_rendimiento
 def buscar_usuario_por_nombre(nombre):
-    """Busca usuarios por nombre (Scan con filtro)."""
-    respuesta = table.scan(
-        FilterExpression=Attr('EntityType').eq('USUARIO') & Attr('Nombre').contains(nombre)
-    )
-    return respuesta.get('Items', [])
+    return buscar_por_atributo_batch('Nombre', nombre)[0]
 
-# --- BÚSQUEDA DE VALORACIONES ---
+@medir_rendimiento
+def buscar_libros_por_titulo(titulo):
+    return buscar_por_atributo_batch('Titulo', titulo)[0]
+
+@medir_rendimiento
+def buscar_por_autor(autor):
+    return buscar_por_atributo_batch('Autor', autor)[0]
 
 @medir_rendimiento
 def consultar_valoraciones_por_usuario(user_id):
-    """
-    Busca todas las valoraciones realizadas por un usuario específico.
-    Como las valoraciones tienen SK 'RATING#USERID', usamos Scan con filtro en SK.
-    """
-    respuesta = table.scan(
-        FilterExpression=Attr('EntityType').eq('VALORACION') & Attr('SK').eq(f'RATING#USER#{user_id}')
-    )
-    return respuesta.get('Items', [])
-
-# --- UTILIDADES ---
+    return table.query(KeyConditionExpression=Key('PK').eq(f'USER#{user_id}') & Key('SK').begins_with('VALORACION#')).get('Items', [])
 
 @medir_rendimiento
-def scan_por_tipo_item(tipo_item):
-    """Búsqueda por tipo de ítem (Scan con filtro)."""
-    respuesta = table.scan(
-        FilterExpression=Attr('EntityType').eq('LIBRO') & Attr('TipoItem').eq(tipo_item)
-    )
-    return respuesta.get('Items', [])
+def scan_por_tipo_item(tipo):
+    resp = table.scan(FilterExpression=Attr('EntityType').eq(tipo))
+    return resp.get('Items', [])
 
-
+@medir_rendimiento
 def obtener_item(pk, sk):
-    """Obtiene un item genérico por PK y SK."""
-    respuesta = table.get_item(Key={'PK': pk, 'SK': sk})
-    return respuesta.get('Item')
+    return table.get_item(Key={'PK': pk, 'SK': sk}).get('Item')
 
-
+@medir_rendimiento
 def actualizar_item(pk, sk, atributos):
-    """Actualiza atributos no clave de un item."""
-    if not atributos:
-        return None
+    update_expr = "SET " + ", ".join([f"#{k} = :{k}" for k in atributos.keys()])
+    expr_names = {f"#{k}": k for k in atributos.keys()}
+    expr_vals = {f":{k}": v for k, v in atributos.items()}
+    table.update_item(Key={'PK': pk, 'SK': sk}, UpdateExpression=update_expr, ExpressionAttributeNames=expr_names, ExpressionAttributeValues=expr_vals)
+    return obtener_item(pk, sk)
 
-    update_expression = 'SET ' + ', '.join(f"#{campo} = :{campo}" for campo in atributos)
-    expression_attribute_names = {f"#{campo}": campo for campo in atributos}
-    expression_attribute_values = {f":{campo}": valor for campo, valor in atributos.items()}
-
-    respuesta = table.update_item(
-        Key={'PK': pk, 'SK': sk},
-        UpdateExpression=update_expression,
-        ExpressionAttributeNames=expression_attribute_names,
-        ExpressionAttributeValues=expression_attribute_values,
-        ReturnValues='ALL_NEW'
-    )
-    return respuesta.get('Attributes')
-
-
+@medir_rendimiento
 def obtener_tamano_tabla():
-    """Devuelve el número total de ítems reales en la tabla."""
-    respuesta = table.scan(Select='COUNT')
-    return respuesta.get('Count', 0)
+    return table.scan(Select='COUNT').get('Count', 0)
