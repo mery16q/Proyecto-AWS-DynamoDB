@@ -86,26 +86,31 @@ def buscar_libro_por_isbn(isbn):
 
 @medir_rendimiento
 def buscar_libros_por_titulo(titulo):
-    """Búsqueda eficiente usando el GSI_ByAttribute."""
-    # Usamos begins_with para que el usuario pueda escribir "Harry" y encuentre "Harry Potter"
     respuesta = table.query(
         IndexName='GSI_ByAttribute',
         KeyConditionExpression=Key('AttributeName').eq('Titulo') & 
                                Key('AttributeValue').begins_with(titulo)
     )
-    return respuesta.get('Items', [])
+    items = respuesta.get('Items', [])
+    if not items:
+        return []
+    pk = items[0]['PK']
+    resultado = table.query(KeyConditionExpression=Key('PK').eq(pk))
+    return resultado.get('Items', [])
 
 @medir_rendimiento
 def buscar_por_autor(autor):
-    """Búsqueda por autor usando GSI (Eficiente).
-    Aquí se usa query, debido que se le pasa la PK del índice secundario (Autor) y se obtiene directamente l
-    os libros escritos por ese autor sin necesidad de escanear toda la tabla.
-    """
     respuesta = table.query(
-        IndexName='AutorIndex',
-        KeyConditionExpression=Key('Autor').eq(autor)
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('Autor') & 
+                               Key('AttributeValue').eq(autor)
     )
-    return respuesta.get('Items', [])
+    items = respuesta.get('Items', [])
+    if not items:
+        return []
+    pk = items[0]['PK']
+    resultado = table.query(KeyConditionExpression=Key('PK').eq(pk))
+    return resultado.get('Items', [])
 
 @medir_rendimiento
 def buscar_usuario_por_id(user_id):
@@ -139,13 +144,17 @@ def buscar_usuario_por_email(email):
 
 @medir_rendimiento
 def buscar_usuario_por_nombre(nombre):
-    """Búsqueda por nombre (prefix search)."""
     respuesta = table.query(
         IndexName='GSI_ByAttribute',
         KeyConditionExpression=Key('AttributeName').eq('Nombre') & 
                                Key('AttributeValue').begins_with(nombre)
     )
-    return respuesta.get('Items', [])
+    items = respuesta.get('Items', [])
+    if not items:
+        return []
+    pk = items[0]['PK']
+    resultado = table.query(KeyConditionExpression=Key('PK').eq(pk))
+    return resultado.get('Items', [])
 
 #VALORACIONES
 
@@ -162,12 +171,17 @@ def consultar_valoraciones_por_usuario(user_id):
 
 @medir_rendimiento
 def buscar_por_tipo_item(tipo):
-    resp = table.query(
+    respuesta = table.query(
         IndexName='GSI_ByAttribute',
         KeyConditionExpression=Key('AttributeName').eq('TipoItem') & 
                                Key('AttributeValue').eq(tipo)
     )
-    return resp.get('Items', [])
+    items = respuesta.get('Items', [])
+    if not items:
+        return []
+    # Aquí puede haber MÚLTIPLES libros, no solo uno
+    claves = [{'PK': i['PK'], 'SK': 'METADATOS'} for i in items if i['SK'] == 'TipoItem']
+    return obtener_metadatos_en_batch(claves)
 
 def obtener_item(pk, sk):
     """
