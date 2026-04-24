@@ -208,7 +208,6 @@ def actualizar_item(pk, sk, atributos):
     )
     return resp.get('Attributes')
 
-@medir_rendimiento
 def obtener_tamano_tabla():
     """
     Obtiene el total de registros casi al instante y GRATIS.
@@ -217,3 +216,39 @@ def obtener_tamano_tabla():
     """
     resp = client.describe_table(TableName='CatalogoLibros')
     return resp['Table'].get('ItemCount', 0)
+
+
+def obtener_total_entidad(entity_type):
+    """
+    Cuenta los ítems principales por tipo de entidad (LIBRO, USUARIO, VALORACION).
+    Usa scan con Select='COUNT' y paginación para calcular solo el total.
+    """
+    total = 0
+    exclusive_start_key = None
+    filtro = Attr('EntityType').eq(entity_type)
+
+    while True:
+        scan_kwargs = {'Select': 'COUNT', 'FilterExpression': filtro}
+        if exclusive_start_key:
+            scan_kwargs['ExclusiveStartKey'] = exclusive_start_key
+
+        resp = table.scan(**scan_kwargs)
+        total += resp.get('Count', 0)
+        exclusive_start_key = resp.get('LastEvaluatedKey')
+
+        if not exclusive_start_key:
+            break
+
+    return total
+
+
+def obtener_total_libros():
+    return obtener_total_entidad('LIBRO')
+
+
+def obtener_total_usuarios():
+    return obtener_total_entidad('USUARIO')
+
+
+def obtener_total_valoraciones():
+    return obtener_total_entidad('VALORACION')

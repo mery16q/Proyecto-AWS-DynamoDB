@@ -138,7 +138,7 @@
         <!-- Results Counter -->
         {% if resultados or mensaje %}
             <div class="alert alert-info">
-                Encontrados <strong>{{ resultados|length }}</strong> de <strong>{{ total_tabla }}</strong> total
+                Encontrados <strong>{{ resultados|length }}</strong> de <strong>{{ total_tabla }}</strong> {{ total_label|default:'registros' }}
                 en <strong>{{ tiempo }} ms</strong>.
             </div>
         {% endif %}

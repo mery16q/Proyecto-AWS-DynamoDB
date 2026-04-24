@@ -21,7 +21,9 @@ from consultas import (
     buscar_por_tipo_item,
     obtener_item,
     actualizar_item,
-    obtener_tamano_tabla,
+    obtener_total_libros,
+    obtener_total_usuarios,
+    obtener_total_valoraciones,
     registrar_prestamo_transaccional
 )
 from poblar_db import poblar_todo
@@ -36,13 +38,24 @@ from .forms import (
     LibroBusquedaTipoForm, 
 )
 
-# --- HELPER PARA RENDIMIENTO ---
-def get_cached_table_size():
-    total = cache.get('dynamodb_table_size')
+def get_cached_entity_count(cache_key, fetcher):
+    total = cache.get(cache_key)
     if total is None:
-        total = obtener_tamano_tabla()
-        cache.set('dynamodb_table_size', total, 3600) # Cache 1 hora
+        total = fetcher()
+        cache.set(cache_key, total, 3600)
     return total
+
+
+def get_cached_book_count():
+    return get_cached_entity_count('dynamodb_total_libros', obtener_total_libros)
+
+
+def get_cached_user_count():
+    return get_cached_entity_count('dynamodb_total_usuarios', obtener_total_usuarios)
+
+
+def get_cached_rating_count():
+    return get_cached_entity_count('dynamodb_total_valoraciones', obtener_total_valoraciones)
 
 # --- VISTAS ---
 
@@ -56,7 +69,6 @@ def index(request):
         'form_usuario_nombre': UsuarioBusquedaNombreForm(),
         'form_valoraciones': ValoracionesUsuarioForm(),
         'form_tipo': LibroBusquedaTipoForm(),
-        'total_tabla': get_cached_table_size(),
     }
     return render(request, 'principal/index.html', contexto)
 
@@ -72,7 +84,8 @@ def buscar_isbn(request):
     
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'ISBN'
+        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tipo_busqueda': 'ISBN', 'total_label': 'libros'
     })
 
 @require_http_methods(["GET", "POST"])
@@ -87,7 +100,8 @@ def buscar_autor(request):
     
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Autor'
+        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tipo_busqueda': 'Autor', 'total_label': 'libros'
     })
 
 @require_http_methods(["GET", "POST"])
@@ -102,7 +116,8 @@ def buscar_titulo(request):
             
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Título'
+        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tipo_busqueda': 'Título', 'total_label': 'libros'
     })
 
 @require_http_methods(["GET", "POST"])
@@ -116,7 +131,8 @@ def buscar_usuario_email(request):
             
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_table_size(), 'tipo_busqueda': 'Usuario por Email'
+        'tiempo': tiempo, 'total_tabla': get_cached_user_count(),
+        'tipo_busqueda': 'Usuario por Email', 'total_label': 'usuarios'
     })
 
 @require_http_methods(["GET", "POST"])
@@ -157,10 +173,11 @@ def buscar_usuario_id(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = obtener_tamano_tabla()
+    total_tabla = get_cached_user_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
         'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por ID',
+        'total_label': 'usuarios'
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -183,10 +200,11 @@ def buscar_usuario_nombre(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = obtener_tamano_tabla()
+    total_tabla = get_cached_user_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
         'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por Nombre',
+        'total_label': 'usuarios'
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -210,10 +228,11 @@ def consultar_valoraciones_usuario(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = obtener_tamano_tabla()
+    total_tabla = get_cached_rating_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
         'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Valoraciones por Usuario',
+        'total_label': 'valoraciones'
     }
     return render(request, 'principal/resultados.html', contexto)
 
@@ -237,7 +256,7 @@ def buscar_tipo(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = obtener_tamano_tabla()
+    total_tabla = get_cached_book_count()
     contexto = {
         'form': form,
         'resultados': resultados,
@@ -245,6 +264,7 @@ def buscar_tipo(request):
         'tiempo': tiempo,
         'total_tabla': total_tabla,
         'tipo_busqueda': 'Tipo',
+        'total_label': 'libros'
     }
     return render(request, 'principal/resultados.html', contexto)
 
