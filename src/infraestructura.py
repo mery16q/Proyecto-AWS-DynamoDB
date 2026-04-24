@@ -25,14 +25,9 @@ def crear_tabla():
                 {'AttributeName': 'Autor', 'AttributeType': 'S'},
                 {'AttributeName': 'AttributeName', 'AttributeType': 'S'}, 
                 {'AttributeName': 'AttributeValue', 'AttributeType': 'S'},
-                {'AttributeName': 'UserID', 'KeyType': 'S'} # OJO: Si usas UserID, debe ser S
+                {'AttributeName': 'UserID', 'AttributeType': 'S'} 
             ],
             GlobalSecondaryIndexes=[
-                {
-                    'IndexName': 'AutorIndex',
-                    'KeySchema': [{'AttributeName': 'Autor', 'KeyType': 'HASH'}],
-                    'Projection': {'ProjectionType': 'ALL'}
-                },
                 {
                     'IndexName': 'GSI_ByAttribute',
                     'KeySchema': [
