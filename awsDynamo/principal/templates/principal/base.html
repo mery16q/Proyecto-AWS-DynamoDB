@@ -146,6 +146,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'registrar_prestamo' %}active{% endif %}" href="{% url 'principal:registrar_prestamo' %}">
+                            <i class="bi bi-book-half"></i> Préstamos
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'poblar_base_datos' %}active{% endif %}" href="{% url 'principal:poblar_base_datos' %}">
                             <i class="bi bi-database-add"></i> Poblar DB
                         </a>

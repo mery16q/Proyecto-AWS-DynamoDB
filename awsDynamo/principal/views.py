@@ -29,7 +29,8 @@ from poblar_db import poblar_todo
 from .forms import (
     LibroBusquedaIsbnForm, 
     LibroBusquedaAutorForm, 
-    LibroBusquedaTituloForm, 
+    LibroBusquedaTituloForm,
+    PrestamoForm, 
     UsuarioBusquedaIdForm, 
     UsuarioBusquedaEmailForm, 
     UsuarioBusquedaNombreForm, 
@@ -138,19 +139,40 @@ def buscar_usuario_email(request):
 
 @require_http_methods(["GET", "POST"])
 def registrar_prestamo(request):
-    """Vista nueva para la función transaccional."""
     mensaje = ""
+    tipo_mensaje = "info"
+    
     if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        isbn = request.POST.get('isbn')
-        if user_id and isbn:
-            exito = registrar_prestamo_transaccional(user_id, isbn, "2026-04-24", "2026-05-09")
-            mensaje = "✅ Préstamo registrado" if exito else "❌ Error en transacción"
-        else:
-            mensaje = "Faltan datos."
+        form = PrestamoForm(request.POST)
+        if form.is_valid():
+            # 1. Extraer datos del formulario
+            u_id = form.cleaned_data['user_id']
+            isbn_libro = form.cleaned_data['isbn']
             
+            # 2. Crear el diccionario 'datos_prestamo' que espera la función
+            datos_prestamo = {
+                'fecha_inicio': str(form.cleaned_data['fecha_inicio']),
+                'fecha_fin': str(form.cleaned_data['fecha_fin'])
+            }
+            
+            # 3. Llamada con los 3 parámetros correctos
+            resultado_tuple = registrar_prestamo_transaccional(u_id, isbn_libro, datos_prestamo)
+            exito = resultado_tuple[0] 
+            
+            if exito:
+                mensaje = f"✅ Préstamo registrado con éxito para el usuario {u_id}"
+                tipo_mensaje = "success"
+                form = PrestamoForm() 
+            else:
+                mensaje = "❌ Error en la transacción: El libro podría no estar disponible."
+                tipo_mensaje = "danger"
+    else:
+        form = PrestamoForm()
+
     return render(request, 'principal/prestamo.html', {
-        'mensaje': mensaje
+        'form': form,
+        'mensaje': mensaje,
+        'tipo_mensaje': tipo_mensaje
     })
 
 @require_http_methods(["GET", "POST"])

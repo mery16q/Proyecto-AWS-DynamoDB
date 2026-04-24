@@ -1,0 +1,45 @@
+{% extends 'principal/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+            <i class="bi bi- banknotes me-2"></i>
+            <h3 class="mb-0">Gestión de Préstamos Transaccionales</h3>
+        </div>
+        <div class="card-body">
+            {% if mensaje %}
+                <div class="alert alert-{{ tipo_mensaje }} alert-dismissible fade show">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+
+            <form method="post" class="needs-validation">
+                {% csrf_token %}
+                
+                <div class="row">
+                    {% for field in form %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="alert alert-secondary small mt-2">
+                    <i class="bi bi-info-circle"></i> 
+                    Esta operación utiliza <strong>DynamoDB TransactWriteItems</strong> para garantizar que el cambio de estado del libro y el registro del préstamo ocurran simultáneamente.
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">
+                    <i class="bi bi-check-circle"></i> Confirmar Operación
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 #encoding:utf-8
 from django import forms
-   
+from datetime import date, timedelta
+
 class LibroBusquedaIsbnForm(forms.Form):
     isbn = forms.CharField(label="ISBN", widget=forms.TextInput, required=True)
     
@@ -51,4 +52,24 @@ class PoblarForm(forms.Form):
         max_value=200,
         initial=5,
         widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+
+class PrestamoForm(forms.Form):
+    user_id = forms.CharField(
+        label="ID de Usuario", 
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 12345'})
+    )
+    isbn = forms.CharField(
+        label="ISBN del Libro", 
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 978...'})
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de Inicio",
+        initial=date.today,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de Devolución",
+        initial=date.today() + timedelta(days=15),
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
     )
