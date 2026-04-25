@@ -437,6 +437,8 @@ def poblar_base_datos(request):
                 poblar_todo(num_libros, num_usuarios, num_autores)
                 mensaje = f"¡Éxito! Se han creado {num_libros} libros, {num_usuarios} usuarios y {num_autores} autores."
                 form = PoblarForm()
+                cache.delete('total_libros')
+                cache.delete('total_usuarios')
             except Exception as e:
                 mensaje = f"Error al poblar la base de datos: {str(e)}"
     
