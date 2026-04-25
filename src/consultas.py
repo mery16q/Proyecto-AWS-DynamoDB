@@ -33,34 +33,59 @@ def obtener_metadatos_en_batch(lista_de_claves):
 
 @medir_rendimiento
 def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
-    # 1. Calcula el tiempo ANTES de intentar la transacción
-    # (30 días en el futuro)
-    tiempo_expiracion = int(time.time()) + (30 * 24 * 60 * 60)
-    
+    f_ini_nueva = datos_prestamo['fecha_inicio']
+    f_fin_nueva = datos_prestamo['fecha_fin']
+
+    # PASO 1: Consultar todos los préstamos ACTIVOS de ese libro en el GSI
     try:
+        respuesta = table.query(
+            IndexName='GSI_ByAttribute',
+            KeyConditionExpression=Key('AttributeName').eq('ISBN_PRESTAMO') & 
+                                   Key('AttributeValue').eq(f'LIBRO#{isbn}')
+        )
+        prestamos_del_libro = respuesta.get('Items', [])
+
+        # PASO 2: Algoritmo de detección de solapamiento
+        for p in prestamos_del_libro:
+            if p.get('Estado') == 'ACTIVO':
+                f_ini_ex = p['FechaInicio']
+                f_fin_ex = p['FechaFin']
+                
+                if f_ini_nueva <= f_fin_ex and f_fin_nueva >= f_ini_ex:
+                    print(f"❌ Conflicto: El libro ya está reservado del {f_ini_ex} al {f_fin_ex}")
+                    return False
+
+    except ClientError as e:
+        print(f"Error consultando GSI: {e}")
+        return False
+
+    # PASO 3: Transacción Atómica
+    try:
+        timestamp = int(time.time())
         client.transact_write_items(TransactItems=[
             {
                 'Put': {
-                    'TableName': 'CatalogoLibros', 
+                    'TableName': 'CatalogoLibros',
                     'Item': {
-                        'PK': f'USER#{user_id}', 
-                        'SK': f'PRESTAMO#{isbn}', 
-                        'EntityType': 'PRESTAMO', 
-                        'FechaInicio': datos_prestamo['fecha_inicio'], 
-                        'FechaFin': datos_prestamo['fecha_fin'], 
-                        'Estado': 'ACTIVO',
-                        'ttl_expiration': {'N': str(tiempo_expiracion)}
+                        'PK': f'USER#{user_id}',
+                        'SK': f'PRESTAMO#{isbn}#{timestamp}',
+                        'EntityType': 'PRESTAMO',
+                        'AttributeName': 'ISBN_PRESTAMO',
+                        'AttributeValue': f'LIBRO#{isbn}',
+                        'ISBN_Libro': isbn,
+                        'FechaInicio': f_ini_nueva,
+                        'FechaFin': f_fin_nueva,
+                        'Estado': 'ACTIVO'
                     }
                 }
             },
             {
                 'Update': {
-                    'TableName': 'CatalogoLibros', 
-                    'Key': {'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'}, 
-                    'UpdateExpression': 'SET #est = :nuevo', 
-                    'ConditionExpression': '#est = :disp', 
-                    'ExpressionAttributeNames': {'#est': 'Estado'}, 
-                    'ExpressionAttributeValues': {':nuevo': 'PRESTADO', ':disp': 'DISPONIBLE'}
+                    'TableName': 'CatalogoLibros',
+                    'Key': {'PK': f'LIBRO#{isbn}', 'SK': 'METADATOS'},
+                    'UpdateExpression': 'SET #est = :nuevo',
+                    'ExpressionAttributeNames': {'#est': 'Estado'},
+                    'ExpressionAttributeValues': {':nuevo': 'PRESTADO'}
                 }
             }
         ])
@@ -154,6 +179,20 @@ def consultar_valoraciones_por_usuario(user_id):
         KeyConditionExpression=Key('UserID').eq(f'USER#{user_id}')
     )
     return resp.get('Items', [])
+
+@medir_rendimiento
+def consultar_prestamos_por_usuario(user_id):
+    """
+    Busca todos los préstamos de un usuario usando la clave primaria del usuario.
+    """
+    resp = table.query(
+        KeyConditionExpression=Key('PK').eq(f'USER#{user_id}') & 
+                               Key('SK').begins_with('PRESTAMO#')
+    )
+    return resp.get('Items', [])
+
+def obtener_total_prestamos():
+    return obtener_total_entidad('PRESTAMO')
 
 @medir_rendimiento
 def buscar_por_tipo_item(tipo):
