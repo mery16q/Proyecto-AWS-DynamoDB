@@ -25,7 +25,8 @@ def crear_tabla():
                 {'AttributeName': 'Autor', 'AttributeType': 'S'},
                 {'AttributeName': 'AttributeName', 'AttributeType': 'S'}, 
                 {'AttributeName': 'AttributeValue', 'AttributeType': 'S'},
-                {'AttributeName': 'UserID', 'AttributeType': 'S'} 
+                {'AttributeName': 'UserID', 'AttributeType': 'S'},
+                {'AttributeName': 'Fecha',          'AttributeType': 'S'}
             ],
             GlobalSecondaryIndexes=[
                 {
@@ -38,8 +39,14 @@ def crear_tabla():
                 },
                 {
                     'IndexName': 'GSI_User_Ratings',
-                    'KeySchema': [{'AttributeName': 'UserID', 'KeyType': 'HASH'}],
-                    'Projection': {'ProjectionType': 'ALL'}
+                    'KeySchema': [
+                        {'AttributeName': 'UserID', 'KeyType': 'HASH'},
+                        {'AttributeName': 'Fecha',  'KeyType': 'RANGE'}
+                    ],
+                    'Projection': {
+                        'ProjectionType': 'INCLUDE',
+                        'NonKeyAttributes': ['Puntuacion', 'Comentario']
+                    }
                 }
             ],
             BillingMode='PAY_PER_REQUEST'
