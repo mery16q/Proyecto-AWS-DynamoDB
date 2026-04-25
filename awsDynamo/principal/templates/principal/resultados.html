@@ -104,7 +104,7 @@
                 </form>
             {% elif tipo_busqueda == 'Valoraciones por Usuario' %}
                 <h5 class="mb-3">Nueva Consulta de Valoraciones por Usuario</h5>
-                <form method="post" action="{% url 'principal:consultar_valoraciones_usuario' %}">
+                <form method="post" action="{% url 'principal:buscar_valoraciones_usuario' %}">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-8">
@@ -119,11 +119,26 @@
                 </form>
             {% elif tipo_busqueda == 'Préstamos por Usuario' %}
                 <h5 class="mb-3">Nueva Consulta de Préstamos por Usuario</h5>
-                <form method="post" action="{% url 'principal:consultar_prestamos_usuario' %}">
+                <form method="post" action="{% url 'principal:buscar_prestamos_usuario' %}">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-8">
                             {{ form.user_id }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            {% elif tipo_busqueda == 'Préstamos por ISBN' %}
+                <h5 class="mb-3">Nueva Consulta de Préstamos por ISBN</h5>
+                <form method="post" action="{% url 'principal:buscar_prestamos_isbn' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.isbn }}
                         </div>
                         <div class="col-md-4">
                             <button type="submit" class="btn btn-primary w-100">

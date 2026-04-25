@@ -26,6 +26,9 @@ class ValoracionesUsuarioForm(forms.Form):
 class PrestamosUsuarioForm(forms.Form):
     user_id = forms.CharField(label="ID de Usuario", widget=forms.TextInput, required=True)
 
+class PrestamosIsbnForm(forms.Form):
+    isbn = forms.CharField(label="ISBN del Libro", widget=forms.TextInput, required=True)
+
 class LibroBusquedaTipoForm(forms.Form):
     TIPO_CHOICES = [
         ('FISICO', 'Físico'),

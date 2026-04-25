@@ -17,8 +17,9 @@ from consultas import (
     buscar_por_autor, 
     buscar_usuario_por_id,
     buscar_usuario_por_email,
-    consultar_valoraciones_por_usuario, 
-    consultar_prestamos_por_usuario,
+    buscar_valoraciones_por_usuario, 
+    buscar_prestamos_por_usuario,
+    buscar_prestamos_por_isbn,
     buscar_por_tipo_item,
     obtener_item,
     actualizar_item,
@@ -40,6 +41,7 @@ from .forms import (
     UsuarioBusquedaNombreForm, 
     ValoracionesUsuarioForm, 
     PrestamosUsuarioForm,
+    PrestamosIsbnForm,
     LibroBusquedaTipoForm,
     PoblarForm,
 )
@@ -240,7 +242,7 @@ def buscar_usuario_nombre(request):
     return render(request, 'principal/resultados.html', contexto)
 
 @require_http_methods(["GET", "POST"])
-def consultar_valoraciones_usuario(request):
+def buscar_valoraciones_usuario(request):
     resultados = []
     mensaje = ""
     tiempo = 0
@@ -253,7 +255,7 @@ def consultar_valoraciones_usuario(request):
             try:
                 # Aquí podrías usar una función similar si fuera necesario, 
                 # pero mantenemos la lógica actual si está funcionando bien.
-                resultados, tiempo = consultar_valoraciones_por_usuario(user_id)
+                resultados, tiempo = buscar_valoraciones_por_usuario(user_id)
                 if not resultados:
                     mensaje = f"No se encontraron valoraciones para el usuario: {user_id}"
             except Exception as e:
@@ -268,7 +270,7 @@ def consultar_valoraciones_usuario(request):
     return render(request, 'principal/resultados.html', contexto)
 
 @require_http_methods(["GET", "POST"])
-def consultar_prestamos_usuario(request):
+def buscar_prestamos_usuario(request):
     resultados = []
     mensaje = ""
     tiempo = 0
@@ -279,7 +281,7 @@ def consultar_prestamos_usuario(request):
         if form.is_valid():
             user_id = form.cleaned_data['user_id']
             try:
-                resultados, tiempo = consultar_prestamos_por_usuario(user_id)
+                resultados, tiempo = buscar_prestamos_por_usuario(user_id)
                 if not resultados:
                     mensaje = f"No se encontraron préstamos para el usuario: {user_id}"
             except Exception as e:
@@ -292,8 +294,6 @@ def consultar_prestamos_usuario(request):
         'total_label': 'préstamos'
     }
     return render(request, 'principal/resultados.html', contexto)
-
-# ... (El resto de funciones como editar_item y poblar_base_datos siguen igual)
 
 @require_http_methods(["GET", "POST"])
 def buscar_tipo(request):
@@ -322,6 +322,32 @@ def buscar_tipo(request):
         'total_tabla': total_tabla,
         'tipo_busqueda': 'Tipo',
         'total_label': 'libros'
+    }
+    return render(request, 'principal/resultados.html', contexto)
+
+@require_http_methods(["GET", "POST"])
+def buscar_prestamos_isbn(request):
+    resultados = []
+    mensaje = ""
+    tiempo = 0
+    form = PrestamosIsbnForm()
+    
+    if request.method == 'POST':
+        form = PrestamosIsbnForm(request.POST)
+        if form.is_valid():
+            isbn = form.cleaned_data['isbn']
+            try:
+                resultados, tiempo = buscar_prestamos_por_isbn(isbn)
+                if not resultados:
+                    mensaje = f"No se encontraron préstamos para el ISBN: {isbn}"
+            except Exception as e:
+                mensaje = f"Error en la búsqueda: {str(e)}"
+    
+    total_tabla = get_cached_loan_count()
+    contexto = {
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Préstamos por ISBN',
+        'total_label': 'préstamos'
     }
     return render(request, 'principal/resultados.html', contexto)
 

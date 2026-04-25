@@ -141,14 +141,18 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'consultar_valoraciones_usuario' %}active{% endif %}" href="{% url 'principal:consultar_valoraciones_usuario' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'buscar_valoraciones_usuario' %}active{% endif %}" href="{% url 'principal:buscar_valoraciones_usuario' %}">
                             <i class="bi bi-star"></i> Valoraciones
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'consultar_prestamos_usuario' %}active{% endif %}" href="{% url 'principal:consultar_prestamos_usuario' %}">
-                            <i class="bi bi-journal-text"></i> Préstamos por Usuario
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPrestamos" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-journal-text"></i> Préstamos
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_prestamos_usuario' %}active{% endif %}" href="{% url 'principal:buscar_prestamos_usuario' %}">Por Usuario</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'buscar_prestamos_isbn' %}active{% endif %}" href="{% url 'principal:buscar_prestamos_isbn' %}">Por ISBN</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'registrar_prestamo' %}active{% endif %}" href="{% url 'principal:registrar_prestamo' %}">

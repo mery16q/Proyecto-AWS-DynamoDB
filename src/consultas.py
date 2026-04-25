@@ -170,7 +170,7 @@ def buscar_usuario_por_email(email):
 #VALORACIONES
 
 @medir_rendimiento
-def consultar_valoraciones_por_usuario(user_id):
+def buscar_valoraciones_por_usuario(user_id):
     """
     Busca todas las valoraciones de un usuario usando el GSI.
     """
@@ -181,13 +181,25 @@ def consultar_valoraciones_por_usuario(user_id):
     return resp.get('Items', [])
 
 @medir_rendimiento
-def consultar_prestamos_por_usuario(user_id):
+def buscar_prestamos_por_usuario(user_id):
     """
     Busca todos los préstamos de un usuario usando la clave primaria del usuario.
     """
     resp = table.query(
         KeyConditionExpression=Key('PK').eq(f'USER#{user_id}') & 
                                Key('SK').begins_with('PRESTAMO#')
+    )
+    return resp.get('Items', [])
+
+@medir_rendimiento
+def buscar_prestamos_por_isbn(isbn):
+    """
+    Busca todos los préstamos de un libro usando el GSI_ByAttribute.
+    """
+    resp = table.query(
+        IndexName='GSI_ByAttribute',
+        KeyConditionExpression=Key('AttributeName').eq('ISBN_PRESTAMO') & 
+                               Key('AttributeValue').eq(f'LIBRO#{isbn}')
     )
     return resp.get('Items', [])
 
