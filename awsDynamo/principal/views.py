@@ -86,17 +86,17 @@ def index(request):
 
 @require_http_methods(["GET", "POST"])
 def buscar_isbn(request):
-    resultados, mensaje, tiempo, form = [], "", 0, LibroBusquedaIsbnForm()
+    resultados, mensaje, tiempo, form, total_sistema = [], "", 0, LibroBusquedaIsbnForm(), None
     if request.method == 'POST':
         form = LibroBusquedaIsbnForm(request.POST)
         if form.is_valid():
             libro, tiempo = buscar_libro_por_isbn(form.cleaned_data['isbn'])
             resultados = [libro] if libro else []
+            total_sistema = cache.get_or_set('total_libros', obtener_total_libros, 3600)
             mensaje = "" if libro else "No se encontró libro."
-    
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tiempo': tiempo, 'total_sistema': total_sistema,
         'tipo_busqueda': 'ISBN', 'total_label': 'libros'
     })
 
@@ -112,7 +112,7 @@ def buscar_autor(request):
     
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tiempo': tiempo, 'total_sistema': get_cached_book_count(),
         'tipo_busqueda': 'Autor', 'total_label': 'libros'
     })
 
@@ -128,7 +128,7 @@ def buscar_titulo(request):
             
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_book_count(),
+        'tiempo': tiempo, 'total_sistema': get_cached_book_count(),
         'tipo_busqueda': 'Título', 'total_label': 'libros'
     })
 
@@ -143,7 +143,7 @@ def buscar_usuario_email(request):
             
     return render(request, 'principal/resultados.html', {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': get_cached_user_count(),
+        'tiempo': tiempo, 'total_sistema': get_cached_user_count(),
         'tipo_busqueda': 'Usuario por Email', 'total_label': 'usuarios'
     })
 
@@ -206,10 +206,10 @@ def buscar_usuario_id(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = get_cached_user_count()
+    total_sistema = get_cached_user_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por ID',
+        'tiempo': tiempo, 'total_sistema': total_sistema, 'tipo_busqueda': 'Usuario por ID',
         'total_label': 'usuarios'
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -233,10 +233,10 @@ def buscar_usuario_nombre(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = get_cached_user_count()
+    total_sistema = get_cached_user_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Usuario por Nombre',
+        'tiempo': tiempo, 'total_sistema': total_sistema, 'tipo_busqueda': 'Usuario por Nombre',
         'total_label': 'usuarios'
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -261,10 +261,10 @@ def buscar_valoraciones_usuario(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = get_cached_rating_count()
+    total_sistema = get_cached_rating_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Valoraciones por Usuario',
+        'tiempo': tiempo, 'total_sistema': total_sistema, 'tipo_busqueda': 'Valoraciones por Usuario',
         'total_label': 'valoraciones'
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -287,10 +287,10 @@ def buscar_prestamos_usuario(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
 
-    total_tabla = get_cached_loan_count()
+    total_sistema = get_cached_loan_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Préstamos por Usuario',
+        'tiempo': tiempo, 'total_sistema': total_sistema, 'tipo_busqueda': 'Préstamos por Usuario',
         'total_label': 'préstamos'
     }
     return render(request, 'principal/resultados.html', contexto)
@@ -313,13 +313,13 @@ def buscar_tipo(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = get_cached_book_count()
+    total_sistema = get_cached_book_count()
     contexto = {
         'form': form,
         'resultados': resultados,
         'mensaje': mensaje,
         'tiempo': tiempo,
-        'total_tabla': total_tabla,
+        'total_sistema': total_sistema,
         'tipo_busqueda': 'Tipo',
         'total_label': 'libros'
     }
@@ -343,10 +343,10 @@ def buscar_prestamos_isbn(request):
             except Exception as e:
                 mensaje = f"Error en la búsqueda: {str(e)}"
     
-    total_tabla = get_cached_loan_count()
+    total_sistema = get_cached_loan_count()
     contexto = {
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
-        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Préstamos por ISBN',
+        'tiempo': tiempo, 'total_sistema': total_sistema, 'tipo_busqueda': 'Préstamos por ISBN',
         'total_label': 'préstamos'
     }
     return render(request, 'principal/resultados.html', contexto)

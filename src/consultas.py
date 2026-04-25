@@ -255,7 +255,6 @@ def eliminar_item(pk, sk):
 def obtener_total_entidad(entity_type):
     """
     Cuenta los ítems principales por tipo de entidad (LIBRO, USUARIO, VALORACION).
-    Usa scan con Select='COUNT' y paginación para calcular solo el total.
     """
     total = 0
     exclusive_start_key = None
@@ -269,12 +268,9 @@ def obtener_total_entidad(entity_type):
         resp = table.scan(**scan_kwargs)
         total += resp.get('Count', 0)
         exclusive_start_key = resp.get('LastEvaluatedKey')
-
         if not exclusive_start_key:
             break
-
     return total
-
 
 def obtener_total_libros():
     return obtener_total_entidad('LIBRO')
