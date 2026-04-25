@@ -252,16 +252,6 @@ def eliminar_item(pk, sk):
     table.delete_item(Key={'PK': pk, 'SK': sk})
     return True
 
-def obtener_tamano_tabla():
-    """
-    Obtiene el total de registros casi al instante y GRATIS.
-    Nota: Se actualiza cada ~6 horas, por lo que es un aproximado,
-    pero es el estándar de la industria frente al costosísimo Scan.
-    """
-    resp = client.describe_table(TableName='CatalogoLibros')
-    return resp['Table'].get('ItemCount', 0)
-
-
 def obtener_total_entidad(entity_type):
     """
     Cuenta los ítems principales por tipo de entidad (LIBRO, USUARIO, VALORACION).
