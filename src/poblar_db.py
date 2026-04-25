@@ -178,11 +178,14 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
             used_loan_ids.add(loan_id)
             fecha_prestamo   = fake.date_between(start_date='-1y', end_date='today')
             fecha_devolucion = fake.date_between(start_date=fecha_prestamo, end_date='+30d')
+            random_isbn = random.choice(lista_isbns)
             batch.put_item(Item={
                 'PK': f'USER#{random.choice(lista_uids)}',
                 'SK': f'PRESTAMO#{loan_id}',
                 'EntityType': 'PRESTAMO',
-                'ISBN_Libro': f'LIBRO#{random.choice(lista_isbns)}',
+                'ISBN_Libro': random_isbn,
+                'AttributeName': 'ISBN_PRESTAMO',
+                'AttributeValue': f'LIBRO#{random_isbn}',                
                 'Estado': 'ACTIVO',
                 'FechaPrestamo':   str(fecha_prestamo),
                 'FechaDevolucion': str(fecha_devolucion),
