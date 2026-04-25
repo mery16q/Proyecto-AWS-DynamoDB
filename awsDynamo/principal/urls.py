@@ -13,6 +13,7 @@ urlpatterns = [
     path('buscar-usuario-email/', views.buscar_usuario_email, name='buscar_usuario_email'),
     path('buscar-usuario-nombre/', views.buscar_usuario_nombre, name='buscar_usuario_nombre'),
     path('consultar-valoraciones-usuario/', views.consultar_valoraciones_usuario, name='consultar_valoraciones_usuario'),
+    path('consultar-prestamos-usuario/', views.consultar_prestamos_usuario, name='consultar_prestamos_usuario'),
     path('buscar-tipo/', views.buscar_tipo, name='buscar_tipo'),
     path('editar-item/', views.editar_item, name='editar_item'),
     path('registrar-prestamo/', views.registrar_prestamo, name='registrar_prestamo'),

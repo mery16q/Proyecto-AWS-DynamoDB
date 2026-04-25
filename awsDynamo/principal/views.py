@@ -17,12 +17,14 @@ from consultas import (
     buscar_usuario_por_id,
     buscar_usuario_por_email,
     consultar_valoraciones_por_usuario, 
+    consultar_prestamos_por_usuario,
     buscar_por_tipo_item,
     obtener_item,
     actualizar_item,
     obtener_total_libros,
     obtener_total_usuarios,
     obtener_total_valoraciones,
+    obtener_total_prestamos,
     registrar_prestamo_transaccional
 )
 from poblar_db import poblar_todo
@@ -35,6 +37,7 @@ from .forms import (
     UsuarioBusquedaEmailForm, 
     UsuarioBusquedaNombreForm, 
     ValoracionesUsuarioForm, 
+    PrestamosUsuarioForm,
     LibroBusquedaTipoForm,
     PoblarForm,
 )
@@ -57,6 +60,9 @@ def get_cached_user_count():
 
 def get_cached_rating_count():
     return get_cached_entity_count('dynamodb_total_valoraciones', obtener_total_valoraciones)
+
+def get_cached_loan_count():
+    return get_cached_entity_count('dynamodb_total_prestamos', obtener_total_prestamos)
 
 # --- VISTAS ---
 
@@ -256,6 +262,32 @@ def consultar_valoraciones_usuario(request):
         'form': form, 'resultados': resultados, 'mensaje': mensaje,
         'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Valoraciones por Usuario',
         'total_label': 'valoraciones'
+    }
+    return render(request, 'principal/resultados.html', contexto)
+
+@require_http_methods(["GET", "POST"])
+def consultar_prestamos_usuario(request):
+    resultados = []
+    mensaje = ""
+    tiempo = 0
+    form = PrestamosUsuarioForm()
+
+    if request.method == 'POST':
+        form = PrestamosUsuarioForm(request.POST)
+        if form.is_valid():
+            user_id = form.cleaned_data['user_id']
+            try:
+                resultados, tiempo = consultar_prestamos_por_usuario(user_id)
+                if not resultados:
+                    mensaje = f"No se encontraron préstamos para el usuario: {user_id}"
+            except Exception as e:
+                mensaje = f"Error en la búsqueda: {str(e)}"
+
+    total_tabla = get_cached_loan_count()
+    contexto = {
+        'form': form, 'resultados': resultados, 'mensaje': mensaje,
+        'tiempo': tiempo, 'total_tabla': total_tabla, 'tipo_busqueda': 'Préstamos por Usuario',
+        'total_label': 'préstamos'
     }
     return render(request, 'principal/resultados.html', contexto)
 

@@ -146,8 +146,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'consultar_prestamos_usuario' %}active{% endif %}" href="{% url 'principal:consultar_prestamos_usuario' %}">
+                            <i class="bi bi-journal-text"></i> Préstamos por Usuario
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'registrar_prestamo' %}active{% endif %}" href="{% url 'principal:registrar_prestamo' %}">
-                            <i class="bi bi-book-half"></i> Préstamos
+                            <i class="bi bi-book-half"></i> Registrar Préstamo
                         </a>
                     </li>
                     <li class="nav-item">

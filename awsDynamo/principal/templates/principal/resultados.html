@@ -117,6 +117,21 @@
                         </div>
                     </div>
                 </form>
+            {% elif tipo_busqueda == 'Préstamos por Usuario' %}
+                <h5 class="mb-3">Nueva Consulta de Préstamos por Usuario</h5>
+                <form method="post" action="{% url 'principal:consultar_prestamos_usuario' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            {{ form.user_id }}
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </form>
             {% elif tipo_busqueda == 'Tipo' %}
                 <h5 class="mb-3">Nueva Búsqueda por Tipo</h5>
                 <form method="post" action="{% url 'principal:buscar_tipo' %}">
