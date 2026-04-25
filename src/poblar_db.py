@@ -58,7 +58,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
     print("--- 🚀 INICIANDO POBLADO DE SISTEMA COMPLETO ---")
     vaciar_tabla()
     
-
     GENEROS = ['Ficción', 'No ficción', 'Ciencia ficción', 'Fantasía', 'Misterio', 'Romance', 'Historia', 'Biografía']
 
     with table.batch_writer() as batch:
@@ -165,7 +164,7 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                     'SK': f'RATING#{uid}',
                     'EntityType': 'VALORACION',
                     'UserID': f'USER#{uid}',
-                    'Fecha': str(fake.date_between(start_date='-1y', end_date='today')),
+                    'Fecha': fake.date_time_between(start_date='-1y', end_date='now').strftime('%Y-%m-%dT%H:%M:%S'),  # ← aquí
                     'Puntuacion': random.randint(1, 5),
                     'Comentario': fake.sentence()
                 })
@@ -181,7 +180,7 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
             fecha_devolucion = fake.date_between(start_date=fecha_prestamo, end_date='+30d')
             batch.put_item(Item={
                 'PK': f'USER#{random.choice(lista_uids)}',
-                'SK': f'LOAN#{loan_id}',
+                'SK': f'PRESTAMO#{loan_id}',
                 'EntityType': 'PRESTAMO',
                 'ISBN_Libro': f'LIBRO#{random.choice(lista_isbns)}',
                 'Estado': 'ACTIVO',
