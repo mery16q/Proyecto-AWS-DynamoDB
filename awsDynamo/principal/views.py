@@ -1,5 +1,6 @@
 # encoding:utf-8
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.core.cache import cache # Para optimizar el tamaño de la tabla
 import sys
@@ -21,6 +22,7 @@ from consultas import (
     buscar_por_tipo_item,
     obtener_item,
     actualizar_item,
+    eliminar_item,
     obtener_total_libros,
     obtener_total_usuarios,
     obtener_total_valoraciones,
@@ -380,6 +382,17 @@ def editar_item(request):
         'mensaje': mensaje,
     }
     return render(request, 'principal/editar.html', contexto)
+
+@require_http_methods(["GET"])
+def eliminar_item_view(request):
+    pk = request.GET.get('pk')
+    sk = request.GET.get('sk')
+    if pk and sk:
+        eliminar_item(pk, sk)
+        messages.success(request, "Ítem eliminado correctamente.")
+    else:
+        messages.error(request, "Parámetros inválidos.")
+    return redirect('principal:index')
 
 @require_http_methods(["GET", "POST"])
 def poblar_base_datos(request):

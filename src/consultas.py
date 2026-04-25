@@ -233,6 +233,13 @@ def actualizar_item(pk, sk, atributos):
     )
     return resp.get('Attributes')
 
+def eliminar_item(pk, sk):
+    """
+    Elimina un ítem de la tabla DynamoDB.
+    """
+    table.delete_item(Key={'PK': pk, 'SK': sk})
+    return True
+
 def obtener_tamano_tabla():
     """
     Obtiene el total de registros casi al instante y GRATIS.
