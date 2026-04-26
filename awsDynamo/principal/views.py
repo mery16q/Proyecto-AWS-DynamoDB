@@ -1,15 +1,12 @@
-# encoding:utf-8
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
-from django.core.cache import cache # Para optimizar el tamaño de la tabla
+from django.core.cache import cache
 import sys
 import os
 
-# Configuración de ruta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-# Importaciones de consultas
 from consultas import (
     buscar_libro_por_isbn,
     buscar_por_atributo_batch, 
@@ -68,8 +65,6 @@ def get_cached_rating_count():
 def get_cached_loan_count():
     return get_cached_entity_count('dynamodb_total_prestamos', obtener_total_prestamos)
 
-# --- VISTAS ---
-
 def index(request):
     contexto = {
         'form_isbn': LibroBusquedaIsbnForm(),
@@ -106,7 +101,6 @@ def buscar_autor(request):
     if request.method == 'POST':
         form = LibroBusquedaAutorForm(request.POST)
         if form.is_valid():
-            # Usamos la función específica
             resultados, tiempo = buscar_por_autor(form.cleaned_data['autor'])
             if not resultados: mensaje = "No se encontraron libros del autor."
     
@@ -122,7 +116,6 @@ def buscar_titulo(request):
     if request.method == 'POST':
         form = LibroBusquedaTituloForm(request.POST)
         if form.is_valid():
-            # Usamos la función específica para búsqueda de texto
             resultados, tiempo = buscar_libros_por_titulo(form.cleaned_data['titulo'])
             if not resultados: mensaje = "No se encontraron libros con ese título."
             
@@ -155,17 +148,14 @@ def registrar_prestamo(request):
     if request.method == 'POST':
         form = PrestamoForm(request.POST)
         if form.is_valid():
-            # 1. Extraer datos del formulario
             u_id = form.cleaned_data['user_id']
             isbn_libro = form.cleaned_data['isbn']
             
-            # 2. Crear el diccionario 'datos_prestamo' que espera la función
             datos_prestamo = {
                 'fecha_inicio': str(form.cleaned_data['fecha_inicio']),
                 'fecha_fin': str(form.cleaned_data['fecha_fin'])
             }
             
-            # 3. Llamada con los 3 parámetros correctos
             resultado_tuple = registrar_prestamo_transaccional(u_id, isbn_libro, datos_prestamo)
             exito = resultado_tuple[0] 
             
@@ -197,7 +187,6 @@ def buscar_usuario_id(request):
         if form.is_valid():
             user_id = form.cleaned_data['user_id']
             try:
-                # Consulta simple (no requiere batch)
                 usuario, tiempo = buscar_usuario_por_id(user_id)
                 if usuario:
                     resultados = [usuario]
@@ -226,7 +215,6 @@ def buscar_usuario_nombre(request):
         if form.is_valid():
             nombre = form.cleaned_data['nombre']
             try:
-                # Llamada optimizada
                 resultados, tiempo = buscar_por_atributo_batch('Nombre', nombre)
                 if not resultados:
                     mensaje = f"No se encontraron usuarios con nombre: {nombre}"
@@ -253,8 +241,6 @@ def buscar_valoraciones_usuario(request):
         if form.is_valid():
             user_id = form.cleaned_data['user_id']
             try:
-                # Aquí podrías usar una función similar si fuera necesario, 
-                # pero mantenemos la lógica actual si está funcionando bien.
                 resultados, tiempo = buscar_valoraciones_por_usuario(user_id)
                 if not resultados:
                     mensaje = f"No se encontraron valoraciones para el usuario: {user_id}"
