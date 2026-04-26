@@ -15,7 +15,7 @@ Sistema de gestión de catálogo bibliográfico en la nube con DynamoDB.
 - [Documentación Técnica](#documentación-técnica)
 ## Estructura del Proyecto
 - `src/`: Código fuente para infraestructura, poblar la base de datos y consultas.
-- `awsDynamo/`: Aplicación web con Flask para interactuar con el catálogo.
+- `awsDynamo/`: Aplicación web con Django para interactuar con el catálogo.
 
 ## Configuración del entorno
 1. Clonar el repositorio.
@@ -37,7 +37,11 @@ Para ejecutar la aplicación web:
 ## Manual de Uso de la Aplicación Web
 Es muy importarte haber ejecutado los comandos anteriores para ejecutar la aplicación web.
 
-Para acceder a la aplicación: `http://127.0.0.1:8000/` en tu navegador.
+Para acceder a la aplicación hay dos maneras:
+
+1. De forma manual: `http://127.0.0.1:8000/` en tu navegador, que habría que seguir los pasos previamente especificados
+2. Accediendo a través del despliegue en Render: https://proyecto-aws-dynamodb.onrender.com
+
 
 Las funcionalidades disponibles incluyen:
 1. **Gestión de la base de datos (Poblado masivo)**: 
