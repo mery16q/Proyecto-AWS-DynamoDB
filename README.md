@@ -1,7 +1,18 @@
 # Proyecto-AWS-DynamoDB
+**Asignatura:** Complemento de base de datos (Grado en Ingeniería Informática del Software, Universidad de Granada)
+**Curso académico:** 2025/2026
+**Repositorio:** https://github.com/mery16q/Proyecto-AWS-DynamoDB
+**Integrantes:** Mónica Jingling Núñez Regidor, María Auxiliadora Quintana Fernández
 
+## Descripción
 Sistema de gestión de catálogo bibliográfico en la nube con DynamoDB.
 
+# Índice
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Configuración del entorno](#configuración-del-entorno)
+- [Ejecución](#ejecución)
+- [Manual de Uso de la Aplicación Web](#manual-de-uso-de-la-aplicación-web)
+- [Documentación Técnica](#documentación-técnica)
 ## Estructura del Proyecto
 - `src/`: Código fuente para infraestructura, poblar la base de datos y consultas.
 - `awsDynamo/`: Aplicación web con Flask para interactuar con el catálogo.
