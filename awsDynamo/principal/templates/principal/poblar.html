@@ -5,12 +5,10 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
-        <!-- Page Title -->
         <h2 class="mb-4">
             <i class="bi bi-database-add"></i> Poblar Base de Datos
         </h2>
 
-        <!-- Form Section -->
         <div class="search-section mb-5">
             <h5 class="mb-3">Especifica la cantidad de datos a crear</h5>
             <form method="post">
@@ -42,14 +40,12 @@
             </form>
         </div>
 
-        <!-- Messages -->
         {% if mensaje %}
             <div class="alert {% if 'Error' in mensaje %}alert-danger{% else %}alert-success{% endif %} mb-4">
                 <i class="bi bi-{% if 'Error' in mensaje %}exclamation-circle{% else %}check-circle{% endif %}"></i> {{ mensaje }}
             </div>
         {% endif %}
 
-        <!-- Back Button -->
         <div class="mt-5">
             <a href="{% url 'principal:index' %}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver al Inicio

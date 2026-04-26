@@ -18,7 +18,6 @@ table = dynamodb.Table('CatalogoLibros')
 
 def vaciar_tabla():
     """Vacía completamente la tabla DynamoDB."""
-    print("🧹 Vaciando la tabla...")
     response = table.scan(ProjectionExpression='PK, SK')
     items = response.get('Items', [])
     
@@ -30,7 +29,6 @@ def vaciar_tabla():
         with table.batch_writer() as batch:
             for item in items:
                 batch.delete_item(Key={'PK': item['PK'], 'SK': item['SK']})
-        print(f"✅ Eliminados {len(items)} ítems.")
     else:
         print("La tabla ya estaba vacía.")
 
@@ -55,14 +53,12 @@ def generar_datos_libro(isbn):
     return item
 
 def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
-    print("--- 🚀 INICIANDO POBLADO DE SISTEMA COMPLETO ---")
     vaciar_tabla()
     
     GENEROS = ['Ficción', 'No ficción', 'Ciencia ficción', 'Fantasía', 'Misterio', 'Romance', 'Historia', 'Biografía']
 
     with table.batch_writer() as batch:
 
-        # 1. Crear Autores
         lista_autores = [fake.unique.name() for _ in range(num_autores)]
         for nombre in lista_autores:
             pk = f'AUTHOR#{nombre.replace(" ", "_").upper()}'
@@ -73,7 +69,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                 'Nombre': nombre,
                 'Biografia': fake.sentence()
             })
-            # Puntero GSI por Nombre
             batch.put_item(Item={
                 'PK': pk,
                 'SK': 'Nombre',
@@ -81,7 +76,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                 'AttributeValue': nombre
             })
 
-        # 2. Crear Usuarios
         lista_uids = [f"{i}" for i in range(1, num_usuarios + 1)]
         for uid in lista_uids:
             nombre_usuario = fake.unique.name()
@@ -95,7 +89,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                 'Nombre': nombre_usuario,
                 'Email': email_usuario
             })
-            # Punteros GSI
             batch.put_item(Item={
                 'PK': pk, 'SK': 'Email',
                 'AttributeName': 'Email',
@@ -107,7 +100,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                 'AttributeValue': nombre_usuario
             })
 
-        # 3. Crear Libros y Valoraciones
         lista_isbns = []
         for _ in range(num_libros):
             isbn  = fake.unique.isbn13()
@@ -116,10 +108,9 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
             autor = fake.name()
             titulo = fake.sentence(nb_words=3).replace('.', '')
             genero = random.choice(GENEROS)
-            anio   = str(random.randint(1950, 2024))
+            anio   = str(random.randint(1950, 2026))
             tipo   = random.choice(['FISICO', 'EBOOK', 'AUDIO'])
 
-            # Item principal
             item = {
                 'PK': pk,
                 'SK': 'METADATOS',
@@ -142,7 +133,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
 
             batch.put_item(Item=item)
 
-            # Punteros GSI
             for attr_name, attr_value in [
                 ('Titulo',   titulo),
                 ('Autor',    autor),
@@ -156,7 +146,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                     'AttributeValue': attr_value
                 })
 
-            # Valoraciones
             usuarios_valoracion = random.sample(lista_uids, k=random.randint(1, min(3, len(lista_uids))))
             for uid in usuarios_valoracion:
                 batch.put_item(Item={
@@ -169,7 +158,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                     'Comentario': fake.sentence()
                 })
 
-        # 4. Crear Préstamos
         used_loan_ids = set()
         while len(used_loan_ids) < 30:
             loan_id = uuid.uuid4().hex
@@ -190,8 +178,6 @@ def poblar_todo(num_libros=50, num_usuarios=10, num_autores=5):
                 'FechaPrestamo':   str(fecha_prestamo),
                 'FechaDevolucion': str(fecha_devolucion),
             })
-
-    print("✅ Datos inyectados correctamente.")
     
 if __name__ == "__main__":
     poblar_todo()
