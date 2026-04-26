@@ -5,12 +5,10 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-10 mx-auto">
-        <!-- Page Title -->
         <h2 class="mb-4">
             <i class="bi bi-search"></i> Resultados de Búsqueda por {{ tipo_busqueda }}
         </h2>
 
-        <!-- Search Form Section -->
         <div class="search-section mb-5">
             {% if tipo_busqueda == 'ISBN' %}
                 <h5 class="mb-3">Nueva Búsqueda por ISBN</h5>
@@ -165,7 +163,6 @@
             {% endif %}
         </div>
 
-        <!-- Results Counter -->
         {% if resultados or mensaje %}
             <div class="alert alert-info">
                 Encontrados <strong>{{ resultados|length }}</strong> de <strong>{{ total_sistema }}</strong> {{ total_label|default:'registros' }}
@@ -173,7 +170,6 @@
             </div>
         {% endif %}
 
-        <!-- Results -->
         <div class="results-container">
             {% if resultados %}
                 {% regroup resultados by PK as resultados_agrupados %}
@@ -231,7 +227,6 @@
             {% endif %}
         </div>
 
-        <!-- Back Button -->
         <div class="mt-5">
             <a href="{% url 'principal:index' %}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver al Inicio

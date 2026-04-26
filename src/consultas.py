@@ -36,7 +36,6 @@ def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
     f_ini_nueva = datos_prestamo['fecha_inicio']
     f_fin_nueva = datos_prestamo['fecha_fin']
 
-    # PASO 1: Consultar todos los préstamos ACTIVOS de ese libro en el GSI
     try:
         respuesta = table.query(
             IndexName='GSI_ByAttribute',
@@ -45,21 +44,17 @@ def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
         )
         prestamos_del_libro = respuesta.get('Items', [])
 
-        # PASO 2: Algoritmo de detección de solapamiento
         for p in prestamos_del_libro:
             if p.get('Estado') == 'ACTIVO':
                 f_ini_ex = p['FechaInicio']
                 f_fin_ex = p['FechaFin']
                 
                 if f_ini_nueva <= f_fin_ex and f_fin_nueva >= f_ini_ex:
-                    print(f"❌ Conflicto: El libro ya está reservado del {f_ini_ex} al {f_fin_ex}")
                     return False
 
     except ClientError as e:
-        print(f"Error consultando GSI: {e}")
         return False
 
-    # PASO 3: Transacción Atómica
     try:
         timestamp = int(time.time())
         client.transact_write_items(TransactItems=[
@@ -91,7 +86,6 @@ def registrar_prestamo_transaccional(user_id, isbn, datos_prestamo):
         ])
         return True
     except ClientError as e:
-        print(f"Error en transacción: {e}")
         return False
 
 @medir_rendimiento
@@ -146,11 +140,8 @@ def buscar_usuario_por_id(user_id):
     return respuesta.get('Item')
 
 
-#PK: USUARIO
-
 @medir_rendimiento
 def buscar_usuario_por_email(email):
-    # Paso 1: buscar el puntero en el GSI
     respuesta = table.query(
         IndexName='GSI_ByAttribute',
         KeyConditionExpression=Key('AttributeName').eq('Email') & 
@@ -160,14 +151,11 @@ def buscar_usuario_por_email(email):
     if not items:
         return []
     
-    # Paso 2: con la PK encontrada, traer todos los ítems del usuario
-    pk = items[0]['PK']  # ej: USER#8
+    pk = items[0]['PK']  
     resultado = table.query(
         KeyConditionExpression=Key('PK').eq(pk)
     )
     return resultado.get('Items', [])
-
-#VALORACIONES
 
 @medir_rendimiento
 def buscar_valoraciones_por_usuario(user_id):
@@ -216,7 +204,6 @@ def buscar_por_tipo_item(tipo):
     items = respuesta.get('Items', [])
     if not items:
         return []
-    # Aquí puede haber MÚLTIPLES libros, no solo uno
     claves = [{'PK': i['PK'], 'SK': 'METADATOS'} for i in items if i['SK'] == 'TipoItem']
     return obtener_metadatos_en_batch(claves)
 
