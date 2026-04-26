@@ -13,6 +13,12 @@ Sistema de gestión de catálogo bibliográfico en la nube con DynamoDB.
 - Para poblar con 10000 datos: `python src/poblar_db.py`
 - Para consultar datos: `python src/consultas.py`
 
+## Para ver la parte web
+Al usarse Django:
+1. Acceder a la carpeta de Django: cd awsDynamo
+2. Lanzar: python manage.py runserver
+3. Una vez lanzado el servidor, accede a: http://127.0.0.1:8000/
+
 ## Documentación Técnica
 - [Contrato de Datos (Esquema de DynamoDB)](DATA_CONTRACT.md)
 
