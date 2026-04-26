@@ -1,5 +1,5 @@
 # Proyecto-AWS-DynamoDB
-**Asignatura:** Complemento de base de datos (Grado en Ingeniería Informática del Software, Universidad de Granada)
+**Asignatura:** Complemento de base de datos (Grado en Ingeniería Informática del Software, Universidad de Sevilla)
 **Curso académico:** 2025/2026
 **Repositorio:** https://github.com/mery16q/Proyecto-AWS-DynamoDB
 **Integrantes:** Mónica Jingling Núñez Regidor, María Auxiliadora Quintana Fernández
